@@ -1,4 +1,5 @@
 ﻿using ProjectManagement.Domain.UsersContext.ValueObjects;
+using ProjectManagement.Domain.UsersContext.ValueObjects.Enumerations;
 
 namespace ProjectManagement.Domain.UsersContext;
 

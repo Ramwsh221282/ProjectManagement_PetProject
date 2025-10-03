@@ -6,6 +6,7 @@ public sealed record UserPhoneNumber
 {
     private static readonly Regex _phoneNumberValidationRegex = new(
         @"[+]\d\s([(]\w{3}[)])(\s\w{3}\s)(\w{2}[-]\w{2})",
+        
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
     
     public const int MAX_PHONE_NUMBER_LENGTH = 18;
