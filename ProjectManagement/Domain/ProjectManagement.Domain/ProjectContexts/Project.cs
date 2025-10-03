@@ -15,6 +15,7 @@ public sealed class Project
     public IReadOnlyList<ProjectMember> Members => _members;
     public IReadOnlyList<ProjectTask> Tasks => _tasks;
 
+    
     public Project(
         ProjectId id, 
         ProjectLifeTime lifeTime, 
