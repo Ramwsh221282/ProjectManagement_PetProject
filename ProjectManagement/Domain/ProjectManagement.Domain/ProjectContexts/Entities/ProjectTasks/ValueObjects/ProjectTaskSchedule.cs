@@ -21,9 +21,9 @@ public readonly record struct ProjectTaskSchedule
         if (created == DateTime.MinValue)
             throw new ArgumentException("Дата конца задачи некорректна.");
 
-        if (closed == null) 
+        if (closed == null)
             return new ProjectTaskSchedule(created, closed);
-        
+
         if (closed < created)
             throw new ArgumentException("Дата окончания задачи менее даты начала задачи.");
 

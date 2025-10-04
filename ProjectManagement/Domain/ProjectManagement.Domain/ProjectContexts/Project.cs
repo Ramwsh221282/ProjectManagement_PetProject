@@ -15,17 +15,17 @@ public sealed class Project
     public IReadOnlyList<ProjectMember> Members => _members;
     public IReadOnlyList<ProjectTask> Tasks => _tasks;
 
-    
     public Project(
-        ProjectId id, 
-        ProjectLifeTime lifeTime, 
-        ProjectDescription description, 
-        ProjectName name, 
-        IEnumerable<ProjectMember> members, 
-        IEnumerable<ProjectTask> tasks)
+        ProjectId id,
+        ProjectLifeTime lifeTime,
+        ProjectDescription description,
+        ProjectName name,
+        IEnumerable<ProjectMember> members,
+        IEnumerable<ProjectTask> tasks
+    )
     {
-        _members =  members.ToList();
-        _tasks =  tasks.ToList();
+        _members = members.ToList();
+        _tasks = tasks.ToList();
         Id = id;
         LifeTime = lifeTime;
         Description = description;

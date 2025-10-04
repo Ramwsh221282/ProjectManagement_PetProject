@@ -4,9 +4,8 @@ namespace ProjectManagement.Domain.ProjectContexts.Entities.ProjectTasks.ValueOb
 
 public abstract class ProjectTaskStatus : Enumeration<ProjectTaskStatus>
 {
-    protected ProjectTaskStatus(int value, string name) : base(value, name)
-    {
-    }
+    protected ProjectTaskStatus(int value, string name)
+        : base(value, name) { }
 
     public abstract bool CanBeRedacted();
 }

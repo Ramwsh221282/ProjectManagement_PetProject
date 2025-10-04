@@ -15,7 +15,11 @@ public sealed record ProjectTaskMemberInfo
         MemberLogin = memberLogin;
     }
 
-    public static ProjectTaskMemberInfo Create(Guid memberId, string memberEmail, string memberLogin)
+    public static ProjectTaskMemberInfo Create(
+        Guid memberId,
+        string memberEmail,
+        string memberLogin
+    )
     {
         if (memberId == Guid.Empty)
             throw new ArgumentException("Некорректный ID участника задачи.");
@@ -27,11 +31,15 @@ public sealed record ProjectTaskMemberInfo
             throw new ArgumentException("Логин пользователя был пустым.");
 
         if (memberLogin.Length > MAX_MEMBER_LOGIN_LENGTH)
-            throw new ArgumentException($"Логин пользователя превышает длину {MAX_MEMBER_LOGIN_LENGTH} символов.");
-        
+            throw new ArgumentException(
+                $"Логин пользователя превышает длину {MAX_MEMBER_LOGIN_LENGTH} символов."
+            );
+
         if (memberLogin.Length < MIN_MEMBER_LOGIN_LENGTH)
-            throw new ArgumentException($"Логин пользователя меньше длины {MIN_MEMBER_LOGIN_LENGTH} символов.");
-        
+            throw new ArgumentException(
+                $"Логин пользователя меньше длины {MIN_MEMBER_LOGIN_LENGTH} символов."
+            );
+
         return new ProjectTaskMemberInfo(memberId, memberEmail, memberLogin);
     }
 }

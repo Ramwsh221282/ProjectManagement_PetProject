@@ -17,7 +17,8 @@ public sealed record ProjectName
 
         if (value.Length > MAX_PROJECT_NAME_LENGTH)
             throw new ArgumentException(
-                $"Длина проекта превышает максимальную длину в {MAX_PROJECT_NAME_LENGTH} символов");
+                $"Длина проекта превышает максимальную длину в {MAX_PROJECT_NAME_LENGTH} символов"
+            );
 
         return new ProjectName(value);
     }

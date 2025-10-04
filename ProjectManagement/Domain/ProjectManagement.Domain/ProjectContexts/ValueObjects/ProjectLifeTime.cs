@@ -25,11 +25,13 @@ public sealed record ProjectLifeTime
         if (createdAt == DateOnly.MinValue)
             throw new ArgumentException("Некорректная дата начала проекта");
 
-        if (finishedAt == null) 
+        if (finishedAt == null)
             return new ProjectLifeTime(createdAt, finishedAt);
-        
+
         if (createdAt > finishedAt)
-            throw new ArgumentException("Дата завершения проекта не может быть больше даты начала.");
+            throw new ArgumentException(
+                "Дата завершения проекта не может быть больше даты начала."
+            );
 
         return new ProjectLifeTime(createdAt, finishedAt);
     }
