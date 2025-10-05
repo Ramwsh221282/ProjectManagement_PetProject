@@ -1,5 +1,8 @@
 ﻿namespace ProjectManagement.Domain.ProjectContexts.Entities.ProjectTasks.ValueObjects;
 
+/// <summary>
+/// Идентификатор задачи
+/// </summary>
 public readonly record struct ProjectTaskId
 {
     public Guid Value { get; }

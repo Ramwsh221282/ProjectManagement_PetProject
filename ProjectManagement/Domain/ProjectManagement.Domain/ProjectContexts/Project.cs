@@ -4,31 +4,67 @@ using ProjectManagement.Domain.ProjectContexts.ValueObjects;
 
 namespace ProjectManagement.Domain.ProjectContexts;
 
+/// <summary>
+/// Проект
+/// </summary>
 public sealed class Project
 {
-    private readonly List<ProjectMember> _members = [];
-    private readonly List<ProjectTask> _tasks = [];
+    private readonly List<ProjectMember> _members;
+
+    /// <summary>
+    /// Задачи проекта
+    /// </summary>
+    private readonly List<ProjectTask> _tasks;
+
+    /// <summary>
+    /// Идентификатор проекта
+    /// </summary>
     public ProjectId Id { get; }
+
+    /// <summary>
+    /// Жизненный цикл проекта
+    /// </summary>
     public ProjectLifeTime LifeTime { get; }
+
+    /// <summary>
+    /// Описание проекта
+    /// </summary>
     public ProjectDescription Description { get; }
+
+    /// <summary>
+    /// Название проекта
+    /// </summary>
     public ProjectName Name { get; }
-    public IReadOnlyList<ProjectMember> Members => _members;
+
+    /// <summary>
+    /// Задачи проекта
+    /// </summary>
     public IReadOnlyList<ProjectTask> Tasks => _tasks;
 
-    public Project(
-        ProjectId id,
-        ProjectLifeTime lifeTime,
-        ProjectDescription description,
-        ProjectName name,
-        IEnumerable<ProjectMember> members,
-        IEnumerable<ProjectTask> tasks
-    )
+    public IReadOnlyCollection<ProjectMember> Members => _members;
+
+    public Project(ProjectDescription description, ProjectName name, ProjectId? id = null)
     {
-        _members = members.ToList();
-        _tasks = tasks.ToList();
-        Id = id;
-        LifeTime = lifeTime;
         Description = description;
         Name = name;
+        Id = id ?? new ProjectId();
+        LifeTime = new ProjectLifeTime();
+        _members = [];
+        _tasks = [];
+    }
+
+    public Project(
+        ProjectDescription description,
+        ProjectName name,
+        IEnumerable<ProjectTask> tasks,
+        IEnumerable<ProjectMember> members,
+        ProjectLifeTime lifeTime,
+        ProjectId? id = null
+    )
+        : this(description, name, id)
+    {
+        _tasks = [.. tasks];
+        _members = [.. members];
+        LifeTime = lifeTime;
     }
 }

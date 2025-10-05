@@ -2,6 +2,9 @@
 
 namespace ProjectManagement.Domain.ProjectContexts.Entities.ProjectTasks.ValueObjects.Enumerations;
 
+/// <summary>
+/// Семейство статусов задачи (умное перечисление)
+/// </summary>
 public abstract class ProjectTaskStatus : Enumeration<ProjectTaskStatus>
 {
     protected ProjectTaskStatus(int value, string name)
