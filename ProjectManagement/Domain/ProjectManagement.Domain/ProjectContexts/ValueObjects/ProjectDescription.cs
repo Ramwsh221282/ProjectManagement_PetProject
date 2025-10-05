@@ -1,8 +1,18 @@
 ﻿namespace ProjectManagement.Domain.ProjectContexts.ValueObjects;
 
+/// <summary>
+/// Описание проекта
+/// </summary>
 public sealed record ProjectDescription
 {
+    /// <summary>
+    /// Максимальная длина описания проекта
+    /// </summary>
     public const int MAX_PROJECT_DESCRIPTION_LENGTH = 500;
+
+    /// <summary>
+    /// Значение название длины проекта
+    /// </summary>
     public string Value { get; }
 
     private ProjectDescription(string value)

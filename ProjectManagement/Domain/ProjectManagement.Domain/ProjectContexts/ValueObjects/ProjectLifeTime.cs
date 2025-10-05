@@ -1,8 +1,18 @@
 ﻿namespace ProjectManagement.Domain.ProjectContexts.ValueObjects;
 
+/// <summary>
+/// Жизненный цикл проекта
+/// </summary>
 public sealed record ProjectLifeTime
 {
+    /// <summary>
+    /// Дата создания проекта
+    /// </summary>
     public DateOnly CreatedAt { get; }
+
+    /// <summary>
+    /// Дата окончания проекта
+    /// </summary>
     public DateOnly? FinishedAt { get; }
 
     public ProjectLifeTime()

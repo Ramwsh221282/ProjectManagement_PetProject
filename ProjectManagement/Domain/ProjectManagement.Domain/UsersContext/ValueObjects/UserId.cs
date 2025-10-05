@@ -6,8 +6,9 @@
 public readonly record struct UserId
 {
     public UserId() => Value = Guid.NewGuid();
+
     private UserId(Guid value) => Value = value;
-    
+
     /// <summary>
     /// Идентификатор пользователя
     /// </summary>

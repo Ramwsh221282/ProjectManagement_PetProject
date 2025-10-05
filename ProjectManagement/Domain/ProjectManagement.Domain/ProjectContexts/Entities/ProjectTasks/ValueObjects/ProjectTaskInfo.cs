@@ -1,10 +1,28 @@
 ﻿namespace ProjectManagement.Domain.ProjectContexts.Entities.ProjectTasks.ValueObjects;
 
+/// <summary>
+/// Информация о задаче (название + описание)
+/// </summary>
 public sealed record ProjectTaskInfo
 {
+    /// <summary>
+    /// Макс. длина названия задачи
+    /// </summary>
     public const int MAX_TITLE_LENGTH = 200;
+
+    /// <summary>
+    /// Макс длина описания задачи
+    /// </summary>
     public const int MAX_DESCRIPTION_LENGTH = 500;
+
+    /// <summary>
+    /// Название задачи
+    /// </summary>
     public string Title { get; }
+
+    /// <summary>
+    /// Описание задачи
+    /// </summary>
     public string Description { get; }
 
     private ProjectTaskInfo(string title, string description)

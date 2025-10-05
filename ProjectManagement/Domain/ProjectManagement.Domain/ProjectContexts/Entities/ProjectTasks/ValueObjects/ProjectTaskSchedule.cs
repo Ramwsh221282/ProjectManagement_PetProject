@@ -1,8 +1,18 @@
 ﻿namespace ProjectManagement.Domain.ProjectContexts.Entities.ProjectTasks.ValueObjects;
 
+/// <summary>
+/// Расписание сроков задачи
+/// </summary>
 public readonly record struct ProjectTaskSchedule
 {
+    /// <summary>
+    /// Дата начала задачи
+    /// </summary>
     public DateTime Created { get; }
+
+    /// <summary>
+    /// Дата окончания задачи
+    /// </summary>
     public DateTime? Closed { get; }
 
     public bool IsClosed => Closed.HasValue;
