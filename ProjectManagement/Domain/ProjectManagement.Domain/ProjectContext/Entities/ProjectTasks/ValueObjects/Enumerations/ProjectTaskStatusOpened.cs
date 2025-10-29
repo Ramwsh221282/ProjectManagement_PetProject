@@ -6,7 +6,7 @@
 public sealed class ProjectTaskStatusOpened : ProjectTaskStatus
 {
     public ProjectTaskStatusOpened()
-        : base(0, "Открыта") { }
+        : base(1, "Открыта") { }
 
     public override bool CanBeRedacted() => true;
 }

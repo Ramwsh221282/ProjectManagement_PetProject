@@ -4,13 +4,17 @@ namespace ProjectManagement.Domain.UserContext.ValueObjects;
 
 public sealed record UserPhoneNumber
 {
+    private const RegexOptions OPTIONS = RegexOptions.Compiled | RegexOptions.IgnoreCase;
+    
     /// <summary>
     /// Регулярное выражение для проверки номера телефона
     /// </summary>
-    private static readonly Regex _phoneNumberValidationRegex = new(
-        @"[+]\d\s([(]\w{3}[)])(\s\w{3}\s)(\w{2}[-]\w{2})",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase
-    );
+    private static readonly Regex[] _phoneValidationTemplates =
+    [
+        new(@"[+]\d\s{1}[(](\d{3})[)]\s{1}(\d{3})\s{1}(\d{2})-(\d{2})", OPTIONS),
+        new(@"[+]\d(\d{3})(\d{3})(\d{2})(\d{2})", OPTIONS),
+        new(@"^\d(\d{3})(\d{3})(\d{2})(\d{2})\b", OPTIONS),
+    ];
 
     /// <summary>
     /// Максимальная длина номера телефона
@@ -31,11 +35,21 @@ public sealed record UserPhoneNumber
 
         if (phone.Length > MAX_PHONE_NUMBER_LENGTH)
             throw new ArgumentException("Номер телефона некорректного формата.");
-
-        Match match = _phoneNumberValidationRegex.Match(phone);
-        if (!match.Success)
+        
+        if (!IsPhoneNumberMatchesTemplate(_phoneValidationTemplates, phone))
             throw new ArgumentException("Номер телефона некорректного формата.");
 
         return new UserPhoneNumber(phone);
+    }
+
+    private static bool IsPhoneNumberMatchesTemplate(IEnumerable<Regex> templates, string input)
+    {
+        foreach (var regex in templates)
+        {
+            if (regex.IsMatch(input))
+                return true;
+        }
+
+        return false;
     }
 }

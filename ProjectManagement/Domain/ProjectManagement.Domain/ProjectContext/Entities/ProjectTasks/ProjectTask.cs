@@ -1,4 +1,5 @@
 ﻿using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.ValueObjects;
 
@@ -14,7 +15,7 @@ public sealed class ProjectTask
     /// </summary>
     public Project Project { get; }
 
-    /// <summary>
+    /// <summary>   
     /// Идентификатор проекта
     /// </summary>
     public ProjectId ProjectId { get; }
@@ -55,15 +56,20 @@ public sealed class ProjectTask
         ProjectTaskStatusInfo statusInfo,
         ProjectTaskInfo information,
         Project project,
-        IEnumerable<ProjectTaskAssignment> assignments
+        IEnumerable<ProjectTaskAssignment>? assignments
     )
     {
         Project = project;
         ProjectId = project.Id;
-        _assignements = [.. assignments];
+        _assignements = assignments == null ? [] : [..assignments];
         Id = id;
         Limit = limit;
         Information = information;
         StatusInfo = statusInfo;
+    }
+
+    public void AddAssignment(ProjectTaskAssignment assignment)
+    {
+        _assignements.Add(assignment);
     }
 }

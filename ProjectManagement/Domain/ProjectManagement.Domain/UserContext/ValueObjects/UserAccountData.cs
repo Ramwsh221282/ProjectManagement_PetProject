@@ -64,7 +64,7 @@ public sealed partial record UserAccountData
     /// Регулярное выражение для проверки email
     /// </summary>
     [GeneratedRegex(
-        @"(\\w*)[@](\\w{3,})[.](com|ru)",
+        @"\b([a-z]+)[@]([a-z]+)[.](com|ru)\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     )]
     private static partial Regex EmailValidationRegex();

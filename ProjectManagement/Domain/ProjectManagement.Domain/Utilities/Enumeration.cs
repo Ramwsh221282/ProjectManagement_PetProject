@@ -11,7 +11,7 @@ public abstract class Enumeration<TEnum>
     /// <summary>
     /// Фабрики перечисления
     /// </summary>
-    private static Dictionary<int, Func<TEnum>> _factories = InitializeFactories();
+    private static readonly Dictionary<int, Func<TEnum>> _factories = InitializeFactories();
 
     /// <summary>
     /// Название перечисления
@@ -37,6 +37,8 @@ public abstract class Enumeration<TEnum>
     /// <exception cref="ArgumentException">Исключение, если перечисления с таким названием не существует</exception>
     public static TEnum FromName(string name)
     {
+        var dictionary = _factories;
+        
         foreach (KeyValuePair<int, Func<TEnum>> keyPair in _factories)
         {
             TEnum enumeration = keyPair.Value();
