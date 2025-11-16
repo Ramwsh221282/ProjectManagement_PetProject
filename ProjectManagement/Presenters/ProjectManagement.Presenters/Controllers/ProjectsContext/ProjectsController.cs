@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Domain.ProjectContext;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments;
@@ -12,6 +11,12 @@ using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects
 using ProjectManagement.Domain.ProjectContext.ValueObjects;
 using ProjectManagement.Infrastructure;
 using ProjectManagement.Infrastructure.UserContext;
+using ProjectManagement.UseCases.Projects.AddProjectMember;
+using ProjectManagement.UseCases.Projects.AddProjectTask;
+using ProjectManagement.UseCases.Projects.AssignTaskToProject;
+using ProjectManagement.UseCases.Projects.ProjectClosing;
+using ProjectManagement.UseCases.Projects.ProjectCreation;
+using ProjectManagement.UseCases.Projects.ProjectUpdating;
 
 namespace ProjectManagement.Presenters.Controllers.ProjectsContext;
 
@@ -20,20 +25,15 @@ namespace ProjectManagement.Presenters.Controllers.ProjectsContext;
 public class ProjectsController
 {
     [HttpPost]
-    public IResult Create([FromBody] CreateProjectRequest request)
+    public async Task<IResult> Create(
+        [FromBody] CreateProjectRequest request,
+        [FromServices] CreateProjectCommandHandler handler,
+        CancellationToken ct)
     {
-        try
-        {
-            var projectName = ProjectName.Create(request.Name);
-            var projectDescription = ProjectDescription.Create(request.Description);
-            var project = new Project(projectDescription, projectName);
-            ProjectsStorage.Projects.Add(project.Id.Value, project);
-            return new Envelope(project.ToDto());
-        }
-        catch(Exception ex)
-        {
-            return new Envelope(HttpStatusCode.BadRequest, ex.Message);
-        }
+        CreateProjectCommand command = new(request.Name, request.Description);
+        Project project = await handler.Handle(command, ct);
+        ProjectDto dto = project.ToDto();
+        return new Envelope(HttpStatusCode.OK, dto);
     }
 
     [HttpGet("{name}")]
@@ -42,7 +42,6 @@ public class ProjectsController
         Project? project = ProjectsStorage.Projects.Values.FirstOrDefault(c => c.Name.Value == name);
         if (project == null)
             return new Envelope(HttpStatusCode.NotFound, $"Не найден проект с названием: {name}");
-        
         return new Envelope(project.ToDto());
     }
     
@@ -55,111 +54,72 @@ public class ProjectsController
     }
 
     [HttpPatch("{name}/close")]
-    public IResult Close([FromRoute] string name)
+    public async Task<IResult> Close(
+        [FromRoute] string name,
+        [FromServices] CloseProjectCommandHandler handler,
+        CancellationToken ct)
     {
-        Project? project = GetByName(name);
-        if (project == null)
-            return new Envelope(HttpStatusCode.NotFound, $"Не найден проект с названием: {name}");
-        
-        project.Close();
-        ProjectsStorage.Projects[project.Id.Value] = project;
+        CloseProjectCommand command = new(name);
+        Project project = await handler.Handle(command, ct);
         return new Envelope(project.ToDto());
     }
 
     [HttpPut("{name}")]
-    public IResult Update(
+    public async Task<IResult> Update(
         [FromRoute(Name = "name")] string identityName,
-        [FromQuery(Name = "name")] string name, 
-        [FromQuery(Name = "description")] string description)
+        [FromQuery(Name = "newname")] string newname, 
+        [FromQuery(Name = "description")] string description,
+        [FromServices] UpdateProjectCommandHandler handler,
+        CancellationToken ct = default)
     {
-        Project? project = GetByName(identityName);
-        if (project == null)
-            return new Envelope(HttpStatusCode.NotFound, $"Не найден проект с названием: {name}");
-        
-        project.Update(name, description);
-        ProjectsStorage.Projects[project.Id.Value] = project;
-        return new Envelope(project.ToDto());
+        UpdateProjectCommand command = new(identityName, newname, description);
+        Project result = await handler.Handle(command, ct);
+        return new Envelope(result.ToDto());
     }
 
     [HttpPost("{name}/tasks")]
-    public IResult AddTasks(
+    public async Task<IResult> AddTasks(
         [FromRoute(Name = "name")] string name,
-        [FromBody] AddProjectTaskRequest request)
+        [FromBody] AddProjectTaskRequest request,
+        [FromServices] AddProjectTaskCommandHandler handler,
+        CancellationToken ct)
     {
-        Project? project = GetByName(name);
-        if (project == null)
-            return new Envelope(HttpStatusCode.NotFound, $"Не найден проект с названием: {name}");
-        
-        ProjectTaskId id = ProjectTaskId.Create(Guid.NewGuid());
-        ProjectTaskMembersLimit membersLimit = ProjectTaskMembersLimit.Create(request.MembersLimit);
-        ProjectTaskStatusInfo status = new ProjectTaskStatusInfo(
-            ProjectTaskStatus.FromName(request.Status),
-            ProjectTaskSchedule.Create(DateTime.UtcNow, request.FinishedAt)
-        );
-        ProjectTaskInfo info = ProjectTaskInfo.Create(request.Title, request.Description);
-        ProjectTask task = new ProjectTask(id, membersLimit, status, info, project, []);
-        project.AddTask(task);
-        ProjectsStorage.Projects[project.Id.Value] = project;
-        return new Envelope(task.ToDto(project));
+        AddProjectTaskCommand command = new(
+            name, 
+            request.MembersLimit,
+            request.Status, 
+            request.FinishedAt,
+            request.Title, 
+            request.Description);
+        ProjectTask result = await handler.Handle(command, ct);
+        return new Envelope(result.ToDto(result.Project));
     }
 
     [HttpPost("{name}/members/{userId:guid}")]
-    public IResult AddMember(
+    public async Task<IResult> AddMember(
         [FromRoute(Name = "name")] string projectName,
-        [FromRoute(Name = "userId")] Guid userId
+        [FromRoute(Name = "userId")] Guid userId,
+        [FromServices] AddProjectMemberTaskCommandHandler handler,
+        CancellationToken ct
         )
     {
-        var project = GetByName(projectName);
-        if (project == null)
-            return new Envelope(HttpStatusCode.NotFound, $"Проект с названием: {projectName} не найден.");
-
-        if (!UsersStorage.Users.TryGetValue(userId, out var user))
-            return new Envelope(HttpStatusCode.NotFound, $"Пользователь с ID: {userId} не найден.");
-
-        var projectMemberId = ProjectMemberId.Create(user.UserId.Value);
-        var projectMemberLogin = ProjectMemberLogin.Create(user.AccountData.Login);
-        var projectMemberStatus = new ProjectMemberStatusContributor();
-
-        var member = new ProjectMember(
-            projectMemberId, 
-            projectMemberLogin, 
-            projectMemberStatus,
-            project, []);
-
-        project.AddMember(member);
-        ProjectsStorage.Projects[project.Id.Value] = project;
-        return new Envelope(member.ToDto(project));
+        AddProjectMemberTaskCommand command = new(userId, projectName);
+        ProjectMember result = await handler.Handle(command, ct);
+        return new Envelope(result.ToDto(result.Project));
     }
     
     [HttpPost("{name}/tasks/{taskId:guid}/assignment")]
-    public IResult CreateAssignment(
-        [FromRoute(Name = "name")] string projectName,
+    public async Task<IResult> CreateAssignment(
+        [FromRoute(Name = "name")] string name,
         [FromRoute(Name = "taskId")] Guid taskId,
-        [FromQuery(Name = "memberId")] Guid memberId
+        [FromRoute(Name = "memberId")] Guid memberId,
+        [FromServices] AssignTaskToProjectCommandHandler handler,
+        CancellationToken ct
     )
     {
-        var project = GetByName(projectName);
-        if (project == null)
-            return new Envelope(HttpStatusCode.NotFound, $"Проект с названием: {projectName} не найден.");
-
-        var task = project.Tasks.FirstOrDefault(t => t.Id.Value == taskId);
-        if (task == null)
-            return new Envelope(HttpStatusCode.NotFound, $"Задача проекта с ID: {taskId} не найдена.");
-
-        var projectMember = project.Members.FirstOrDefault(m => m.MemberId.Value == memberId);
-        if (projectMember == null)
-            return new Envelope(HttpStatusCode.NotFound, $"Участник задачи с ID: {memberId} не найден в проекте.");
-
-        var assignment = new ProjectTaskAssignment(task, projectMember);
-        task.AddAssignment(assignment);
-        ProjectsStorage.Projects[project.Id.Value] = project;
-        return new Envelope(assignment.ToDto());
-    }
-    
-    private Project? GetByName(string name)
-    {
-        Project? project = ProjectsStorage.Projects.Values.FirstOrDefault(c => c.Name.Value == name);
-        return project;
+        AssignTaskToProjectCommand command = new(name, taskId, memberId);
+        ProjectTaskAssignment result = await handler.Handle(command, ct);
+        return new Envelope(result.ToDto());
     }
 }
 
@@ -259,7 +219,6 @@ public sealed class ProjectTaskAssignmentDto
     public required ProjectMemberDto MemberInfo { get; set; }
     public required ProjectTaskDto TaskInfo { get; set; }
 }
-
 
 
 public sealed record AddProjectTaskRequest(
