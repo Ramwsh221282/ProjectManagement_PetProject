@@ -7,4 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Domain\ProjectManagement.Domain\ProjectManagement.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Users\" />
+  </ItemGroup>
 </Project>
