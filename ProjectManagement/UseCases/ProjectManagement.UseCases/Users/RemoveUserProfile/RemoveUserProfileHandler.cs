@@ -8,19 +8,17 @@ public sealed class RemoveUserProfileHandler(IUsersRepository users, IUnitOfWork
     private IUsersRepository Users { get; } = users;
     private IUnitOfWork UnitOfWork { get; } = unitOfWork;
 
-    public async Task Handle(
+    public async Task<User> Handle(
         RemoveUserCommand command, 
         CancellationToken ct = default)
     {
-        // Здесь User приходит с state Attached (привязан к контексту)
         User? user = await Users.GetUser(command.UserId, ct);
         if (user is null) 
             throw new InvalidOperationException("Пользователь не найден.");
-
-        // Здесь User переходит в state Deleted (будет удален)
+        
         Users.Delete(user);
         
-        // Здесь будет сгенерирован и отправлен SQL запрос с DELETE
         await UnitOfWork.SaveChangesAsync(ct);
+        return user;
     }
 }

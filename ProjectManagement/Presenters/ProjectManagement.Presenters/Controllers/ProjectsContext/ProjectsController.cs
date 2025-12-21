@@ -23,6 +23,7 @@ public class ProjectsController
     /// <summary>
     /// Создание проекта
     /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
     /// <param name="request">Запрос на создание проекта (UserId, Name, Description)</param>
     /// <param name="handler">Обработчик создания проекта</param>
     /// <param name="ct">Токен отмены</param>
@@ -158,7 +159,17 @@ public class ProjectsController
         ProjectTask task = await handler.Handle(command, ct);
         return new Envelope(task.ToDto());
     }
-
+    
+    /// <summary>
+    /// Обновление информации о проекте
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="projectId">Идентификатор проекта</param>
+    /// <param name="name">Новое название проекта</param>
+    /// <param name="description">Новое описание проекта</param>
+    /// <param name="handler">Обработчик обновления информации о проекте</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Обновленный проект</returns>
     [HttpPost("{id:guid}")]
     public async Task<Envelope> UpdateInformation(
         [FromHeader(Name = "user-id")] Guid userId,

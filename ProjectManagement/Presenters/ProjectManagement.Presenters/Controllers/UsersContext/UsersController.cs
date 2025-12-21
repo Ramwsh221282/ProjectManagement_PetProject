@@ -5,10 +5,15 @@ using ProjectManagement.Domain.UserContext.ValueObjects.Enumerations;
 using ProjectManagement.Infrastructure.UserContext;
 using ProjectManagement.Presenters.Controllers.ProjectsContext;
 using ProjectManagement.UseCases.Projects.CreateProjectByUser;
+using ProjectManagement.UseCases.Users.ModifyAccountData;
 using ProjectManagement.UseCases.Users.RegisterUser;
+using ProjectManagement.UseCases.Users.RemoveUserProfile;
 
 namespace ProjectManagement.Presenters.Controllers.UsersContext;
 
+/// <summary>
+/// Контроллер для работы с пользователями
+/// </summary>
 [ApiController]
 [Route("api/users")]
 public sealed class UsersController
@@ -32,6 +37,48 @@ public sealed class UsersController
         )
     {
         RegisterUserCommand command = new(Email: email, Login: login, Phone: phone);
+        User user = await handler.Handle(command, ct);
+        return new Envelope(user.ToDto());
+    }
+    
+    /// <summary>
+    /// Изменение данных аккаунта пользователя
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="email">Новая почта</param>
+    /// <param name="login">Новый логин</param>
+    /// <param name="handler">Обработчик изменения данных аккаунта</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Измененный пользователь</returns>
+    [HttpPost("{id:guid}")]
+    public async Task<Envelope> ModifyAccountData(
+        [FromRoute(Name = "id")] Guid userId,
+        [FromQuery(Name = "email")] string? email,
+        [FromQuery(Name = "login")] string? login,
+        [FromServices] ModifyUserAccountDataHandler handler,
+        CancellationToken ct
+        )
+    {
+        ModifyUserAccountDataCommand command = new(userId, email, login);
+        User user = await handler.Handle(command, ct);
+        return new Envelope(user.ToDto());
+    }
+    
+    /// <summary>
+    /// Удаление пользователя
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="handler">Обработчик удаления пользователя</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Удаленный пользователь</returns>
+    [HttpDelete("{id:guid}")]
+    public async Task<Envelope> DeleteUser(
+        [FromRoute(Name = "id")] Guid userId,
+        [FromServices] RemoveUserProfileHandler handler,
+        CancellationToken ct
+        )
+    {
+        RemoveUserCommand command = new(userId);
         User user = await handler.Handle(command, ct);
         return new Envelope(user.ToDto());
     }
