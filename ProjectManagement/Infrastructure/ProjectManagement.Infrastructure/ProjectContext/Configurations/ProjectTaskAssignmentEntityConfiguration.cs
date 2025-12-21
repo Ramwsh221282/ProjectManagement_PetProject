@@ -18,8 +18,11 @@ public sealed class ProjectTaskAssignmentEntityConfiguration
         // в таблицу project_task_assignments
         builder.ToTable("project_task_assigmnets");
 
-        // конфигурирования ключа (поскольку связь ко многим - ключ составной)
-        builder.HasKey(x => new { x.TaskId, x.MemberId }).HasName("pk_project_task_assignment");
+        builder.HasKey(x => x.Id).HasName("pk_project_task_assignments");
+        
+        builder.Property(x => x.Id)
+            .HasColumnName("id")
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectTaskAssignmentId.Create(fromDb));
 
         // конфигурирование даты назначения
         builder
