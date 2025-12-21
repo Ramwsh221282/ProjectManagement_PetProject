@@ -1,7 +1,7 @@
 ﻿using ProjectManagement.Domain.Contracts;
 using ProjectManagement.Domain.ProjectContext;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
 
 namespace ProjectManagement.UseCases.Projects.AssignMemberToTask;

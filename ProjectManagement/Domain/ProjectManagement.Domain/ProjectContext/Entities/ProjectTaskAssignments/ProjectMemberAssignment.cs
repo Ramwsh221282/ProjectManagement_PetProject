@@ -1,10 +1,10 @@
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
 
-namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments;
+namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 
 /// <summary>
 /// Назначение участника проекта к задаче
@@ -13,6 +13,11 @@ public sealed class ProjectTaskAssignment
 {
     private ProjectTaskAssignment() { } // ef core
 
+    /// <summary>
+    /// Ид назначения участника в задачу
+    /// </summary>
+    public ProjectTaskAssignmentId Id { get; private set; }
+    
     /// <summary>
     /// Задача
     /// </summary>
@@ -38,8 +43,13 @@ public sealed class ProjectTaskAssignment
     /// </summary>
     public ProjectTaskAssignmentDate AssignmentDate { get; }
 
-    public ProjectTaskAssignment(ProjectTask task, ProjectMember member, ProjectTaskAssignmentDate assignmentDate)
+    public ProjectTaskAssignment(
+        ProjectTaskAssignmentId id,
+        ProjectTask task, 
+        ProjectMember member, 
+        ProjectTaskAssignmentDate assignmentDate)
     {
+        Id = id;
         Task = task;
         TaskId = task.Id;
         Member = member;
@@ -56,7 +66,8 @@ public sealed class ProjectTaskAssignment
     public static ProjectTaskAssignment FormAssignmentByCurrentDate(ProjectTask task, ProjectMember member)
     {
         ProjectTaskAssignmentDate date = ProjectTaskAssignmentDate.Current();
-        ProjectTaskAssignment assignment = new ProjectTaskAssignment(task, member, date);
+        ProjectTaskAssignmentId id = ProjectTaskAssignmentId.New();
+        ProjectTaskAssignment assignment = new ProjectTaskAssignment(id, task, member, date);
         task.AddAssignment(assignment);
         member.AssignTo(assignment);
         return assignment;

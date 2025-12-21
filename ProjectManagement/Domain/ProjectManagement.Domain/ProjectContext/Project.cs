@@ -1,7 +1,7 @@
-﻿using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
+﻿using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectOwnershipping;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
 using ProjectManagement.Domain.ProjectContext.ValueObjects;
 using ProjectManagement.Domain.UserContext;

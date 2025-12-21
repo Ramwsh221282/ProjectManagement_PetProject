@@ -1,5 +1,5 @@
-﻿using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
+﻿using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects.Enumerations;
 using ProjectManagement.Domain.ProjectContext.ValueObjects;

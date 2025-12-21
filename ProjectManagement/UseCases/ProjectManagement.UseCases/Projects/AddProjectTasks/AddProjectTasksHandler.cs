@@ -6,7 +6,7 @@ using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects
 
 namespace ProjectManagement.UseCases.Projects.AddProjectTasks;
 
-public sealed class AddProjectTasksCommandHandler(
+public sealed class AddProjectTasksHandler(
     IProjectsRepository repository,
     ITransactionSource transactionSource,
     IUnitOfWork unitOfWork)

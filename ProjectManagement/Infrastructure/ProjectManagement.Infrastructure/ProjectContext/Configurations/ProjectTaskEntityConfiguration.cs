@@ -27,6 +27,7 @@ public sealed class ProjectTaskEntityConfiguration : IEntityTypeConfiguration<Pr
         builder
             .Property(x => x.ProjectId)
             .HasColumnName("project_id")
+            .IsRequired()
             .HasConversion(toDb => toDb!.Value.Value, fromDb => ProjectId.Create(fromDb));
 
         // конфигурируем лимит участников задач

@@ -28,8 +28,9 @@ public sealed class ProjectMemberEntityConfiguration : IEntityTypeConfiguration<
         // конфигурирование ключа projectId
         builder
             .Property(x => x.ProjectId)
+            .IsRequired()
             .HasColumnName("project_id")
-            .HasConversion(toDb => toDb!.Value, fromDb => ProjectId.Create(fromDb.Value));
+            .HasConversion(toDb => toDb!.Value.Value, fromDb => ProjectId.Create(fromDb));
 
         // конфигурирование логина
         builder

@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using ProjectManagement.Domain.ProjectContext;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
 using ProjectManagement.Presenters.Controllers.ProjectsContext.Dtos;
 
@@ -29,11 +29,11 @@ public static class ProjectsExtensions
             CreatedAt = project.LifeTime.CreatedAt,
             FinishedAt = project.LifeTime.FinishedAt,
             IsClosed = project.LifeTime.IsFinished,
-            Tasks = project.Tasks.Select(t => t.ToDto(project))
+            Tasks = project.Tasks.Select(t => t.ToDto())
         };
     }
 
-    public static ProjectTaskDto ToDto(this ProjectTask task, Project project)
+    public static ProjectTaskDto ToDto(this ProjectTask task)
     {
         return new ProjectTaskDto()
         {
@@ -41,18 +41,18 @@ public static class ProjectsExtensions
             FinishedAt = task.StatusInfo.Schedule.Closed,
             CreatedAt = task.StatusInfo.Schedule.Created,
             MembersLimit = task.Limit.Value,
-            ProjectId = project.Id.Value,
+            ProjectId = task.ProjectId!.Value.Value,
             StatusName = task.StatusInfo.Status.Name
         };
     }
 
-    public static ProjectMemberDto ToDto(this ProjectMember member, Project project)
+    public static ProjectMemberDto ToDto(this ProjectMember member)
     {
         return new ProjectMemberDto()
         {
             Id = member.MemberId.Value,
             Login = member.Login.Value,
-            ProjectId = project.Id.Value,
+            ProjectId = member.ProjectId!.Value.Value,
             Status = member.Status.Name
         };
     }
@@ -61,8 +61,9 @@ public static class ProjectsExtensions
     {
         return new ProjectTaskAssignmentDto()
         {
-            MemberInfo = assignment.Member.ToDto(assignment.Member.Project),
-            TaskInfo = assignment.Task.ToDto(assignment.Member.Project)
+            Id = assignment.Id.Value,
+            MemberInfo = assignment.Member.ToDto(),
+            TaskInfo = assignment.Task.ToDto()
         };
     }
 }

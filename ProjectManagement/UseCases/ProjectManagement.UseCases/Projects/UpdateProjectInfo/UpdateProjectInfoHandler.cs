@@ -6,7 +6,7 @@ namespace ProjectManagement.UseCases.Projects.UpdateProjectInfo;
 
 public sealed class UpdateProjectInfoHandler(IProjectsRepository repository)
 {
-    public async Task<Project> Update(UpdateProjectInfoCommand command, CancellationToken ct = default)
+    public async Task<Project> Handle(UpdateProjectInfoCommand command, CancellationToken ct = default)
     {
         Project? project = await repository.GetProject(command.ProjectId);
         if (project is null) throw new InvalidOperationException("Проект не найден.");

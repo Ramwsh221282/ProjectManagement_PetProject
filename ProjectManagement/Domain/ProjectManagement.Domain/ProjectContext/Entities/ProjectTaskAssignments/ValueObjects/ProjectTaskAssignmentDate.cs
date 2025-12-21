@@ -1,6 +1,6 @@
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
 
-namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments.ValueObjects;
+namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments.ValueObjects;
 
 /// <summary>
 /// Дата назначения участника в задачу

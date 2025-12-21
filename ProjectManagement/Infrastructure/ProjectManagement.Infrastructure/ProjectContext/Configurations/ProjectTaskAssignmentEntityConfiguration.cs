@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
 
 namespace ProjectManagement.Infrastructure.ProjectContext.Configurations;
