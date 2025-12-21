@@ -29,7 +29,7 @@ public sealed class ProjectMemberEntityConfiguration : IEntityTypeConfiguration<
         builder
             .Property(x => x.ProjectId)
             .HasColumnName("project_id")
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectId.Create(fromDb));
+            .HasConversion(toDb => toDb!.Value, fromDb => ProjectId.Create(fromDb.Value));
 
         // конфигурирование логина
         builder

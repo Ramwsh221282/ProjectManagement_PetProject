@@ -1,10 +1,16 @@
-var builder = WebApplication.CreateBuilder(args);
+using ProjectManagement.Presenters.Extensions;
+
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.RegisterInfrastructureServices();
+builder.Services.RegisterProjectsUseCases();
+builder.Services.RegisterUsersUseCases();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
+await app.ApplyMigrations();
 
 app.MapControllers();
 app.UseSwagger();

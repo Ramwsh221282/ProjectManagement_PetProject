@@ -17,6 +17,8 @@ public sealed record ProjectMemberLogin
 
     private ProjectMemberLogin(string value) => Value = value;
 
+    private ProjectMemberLogin() { } // ef core
+
     public string Value { get; }
 
     public static ProjectMemberLogin Create(string value)

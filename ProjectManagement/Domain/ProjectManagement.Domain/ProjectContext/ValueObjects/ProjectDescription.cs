@@ -20,6 +20,11 @@ public sealed record ProjectDescription
         Value = value;
     }
 
+    private ProjectDescription()
+    {
+        // ef core
+    }
+
     public static ProjectDescription Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))

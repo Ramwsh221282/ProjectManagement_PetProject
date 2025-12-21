@@ -23,6 +23,8 @@ public sealed record UserPhoneNumber
 
     private UserPhoneNumber(string phone) => Phone = phone;
 
+    private UserPhoneNumber() { } // ef core
+
     /// <summary>
     /// Номер телефона пользователя
     /// </summary>

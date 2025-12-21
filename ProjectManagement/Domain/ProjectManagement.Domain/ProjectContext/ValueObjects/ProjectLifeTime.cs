@@ -8,28 +8,30 @@ public sealed record ProjectLifeTime
     /// <summary>
     /// Дата создания проекта
     /// </summary>
-    public DateTime CreatedAt { get; }
+    public DateOnly CreatedAt { get; }
 
     /// <summary>
     /// Дата окончания проекта
     /// </summary>
-    public DateTime? FinishedAt { get; }
+    public DateOnly? FinishedAt { get; }
 
-    public ProjectLifeTime()
+    private ProjectLifeTime() { } // ef core
+
+    public ProjectLifeTime(DateOnly createdAt)
     {
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = createdAt;
         FinishedAt = null;
     }
 
-    public bool IsFinished => FinishedAt != null && FinishedAt.Value < DateTime.UtcNow;
+    public bool IsFinished => FinishedAt != null && FinishedAt.Value < DateOnly.FromDateTime(DateTime.UtcNow);
     
-    private ProjectLifeTime(DateTime createdAt, DateTime? finishedAt)
+    private ProjectLifeTime(DateOnly createdAt, DateOnly? finishedAt)
     {
         CreatedAt = createdAt;
         FinishedAt = finishedAt;
     }
 
-    public ProjectLifeTime Closed(DateTime closedAt)
+    public ProjectLifeTime Closed(DateOnly closedAt)
     {
         return new ProjectLifeTime(CreatedAt, closedAt);
     }
@@ -42,19 +44,16 @@ public sealed record ProjectLifeTime
         if (createdAt == DateOnly.MinValue)
             throw new ArgumentException("Некорректная дата начала проекта");
         
-        DateTime createdAtDt = createdAt.ToDateTime(new TimeOnly());
         if (finishedAt == null)
         {
-            return new ProjectLifeTime(createdAtDt, null);
+            return new ProjectLifeTime(createdAt, null);
         }
-        
-        DateTime finished = finishedAt.Value.ToDateTime(new TimeOnly());
         
         if (createdAt > finishedAt)
             throw new ArgumentException(
                 "Дата завершения проекта не может быть больше даты начала."
             );
         
-        return new ProjectLifeTime(createdAtDt, finished);
+        return new ProjectLifeTime(createdAt, finishedAt);
     }
 }

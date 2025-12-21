@@ -27,7 +27,22 @@ public sealed partial record UserAccountData
         Email = email;
         Login = login;
     }
+    
+    public UserAccountData ChangeEmail(string email)
+    {
+        return Create(email, Login);
+    }
 
+    public UserAccountData Copy()
+    {
+        return new UserAccountData(Email, Login);
+    }
+    
+    public UserAccountData ChangeLogin(string login)
+    {
+        return Create(Email, login);
+    }
+    
     /// <summary>
     /// Почта
     /// </summary>

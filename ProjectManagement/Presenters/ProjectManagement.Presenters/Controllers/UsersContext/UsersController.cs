@@ -4,6 +4,8 @@ using ProjectManagement.Domain.UserContext.ValueObjects;
 using ProjectManagement.Domain.UserContext.ValueObjects.Enumerations;
 using ProjectManagement.Infrastructure.UserContext;
 using ProjectManagement.Presenters.Controllers.ProjectsContext;
+using ProjectManagement.UseCases.Projects.CreateProjectByUser;
+using ProjectManagement.UseCases.Users.RegisterUser;
 
 namespace ProjectManagement.Presenters.Controllers.UsersContext;
 
@@ -11,45 +13,26 @@ namespace ProjectManagement.Presenters.Controllers.UsersContext;
 [Route("api/users")]
 public sealed class UsersController
 {
+    /// <summary>
+    /// Регистрация пользователя
+    /// </summary>
+    /// <param name="email">Почта</param>
+    /// <param name="login">Логин</param>
+    /// <param name="phone">Телефон</param>
+    /// <param name="handler">Обработчик регистрации пользователя</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Созданный пользователь</returns>
     [HttpPost]
-    public IResult CreateUser(
+    public async Task<Envelope> CreateUser(
         [FromHeader(Name = "email")] string email,
         [FromHeader(Name = "login")] string login,
-        [FromHeader(Name = "phone")] string phone
+        [FromHeader(Name = "phone")] string phone,
+        [FromServices] RegisterUserHandler handler,
+        CancellationToken ct
         )
     {
-        UserId userId = new UserId();
-        UserAccountData accountData = UserAccountData.Create(email, login);
-        UserPhoneNumber phoneNumber = UserPhoneNumber.Create(phone);
-        UserRegistrationDate date = UserRegistrationDate.Create(DateOnly.FromDateTime(DateTime.UtcNow));
-        var status = new UserStatusOnline();
-        var user = new User(userId, accountData, phoneNumber, date, status);
-        UsersStorage.Users.Add(user.UserId.Value, user);
+        RegisterUserCommand command = new(Email: email, Login: login, Phone: phone);
+        User user = await handler.Handle(command, ct);
         return new Envelope(user.ToDto());
     }
 }
-
-public sealed class UserDto
-{
-    public required Guid Id { get; set; }
-    public required string Login { get; set; }
-    public required string Phone { get; set; }
-    public required DateTime Created { get; set; }
-    public required string Status { get; set; }
-}
-
-public static class UserExtensions
-{
-    public static UserDto ToDto(this User user)
-    {
-        return new UserDto()
-        {
-            Id = user.UserId.Value,
-            Created = user.RegistrationDate.Value.ToDateTime(new TimeOnly()),
-            Login = user.AccountData.Login,
-            Phone = user.PhoneNumber.Phone,
-            Status = user.Status.Name
-        };
-    }
-}
-

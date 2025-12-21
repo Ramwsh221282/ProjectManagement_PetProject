@@ -11,6 +11,11 @@ public readonly record struct UserRegistrationDate
     /// </summary>
     public DateOnly Value { get; }
 
+    public static UserRegistrationDate CreateByCurrentDate()
+    {
+        return new UserRegistrationDate(DateOnly.FromDateTime(DateTime.UtcNow));
+    }
+    
     public static UserRegistrationDate Create(DateOnly value)
     {
         if (value == DateOnly.MinValue)

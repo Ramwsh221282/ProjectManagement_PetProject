@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProjectManagement.Domain.ProjectContext;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectOwnershipping;
 using ProjectManagement.Domain.ProjectContext.ValueObjects;
 
 namespace ProjectManagement.Infrastructure.ProjectContext.Configurations;
@@ -11,7 +13,7 @@ public sealed class ProjectEntityConfiguration : IEntityTypeConfiguration<Projec
     {
         // задаем таблицу
         builder.ToTable("projects");
-
+        
         // устанавливаем ключ
         builder.HasKey(x => x.Id).HasName("pk_projects");
 
@@ -49,7 +51,7 @@ public sealed class ProjectEntityConfiguration : IEntityTypeConfiguration<Projec
                 cpb.Property(x => x.FinishedAt).HasColumnName("finished_at").IsRequired(false);
             }
         );
-
+        
         // конфигурируем связь 1 ко многим
         // 1 проект = много задач
         builder
@@ -67,5 +69,10 @@ public sealed class ProjectEntityConfiguration : IEntityTypeConfiguration<Projec
             .HasForeignKey(m => m.ProjectId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder
+            .HasOne(p => p.Ownership)
+            .WithOne()
+            .HasForeignKey<ProjectOwnership>(o => o.ProjectId);
     }
 }

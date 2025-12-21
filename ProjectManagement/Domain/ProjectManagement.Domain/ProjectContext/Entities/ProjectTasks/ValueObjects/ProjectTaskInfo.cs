@@ -31,6 +31,8 @@ public sealed record ProjectTaskInfo
         Description = description;
     }
 
+    private ProjectTaskInfo() { } // ef core
+
     public static ProjectTaskInfo Create(string title, string description)
     {
         if (string.IsNullOrWhiteSpace(title))

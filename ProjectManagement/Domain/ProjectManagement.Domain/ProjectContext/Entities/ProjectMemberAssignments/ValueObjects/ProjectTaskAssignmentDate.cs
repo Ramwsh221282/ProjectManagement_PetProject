@@ -32,7 +32,7 @@ public readonly record struct ProjectTaskAssignmentDate
                 "Дата назначения участника в задачу некорректна. Дата начала задачи меньше даты назначения."
             );
 
-        if (task.Project.LifeTime.CreatedAt < date)
+        if (task.Project!.LifeTime.CreatedAt < DateOnly.FromDateTime(date))
             throw new ArgumentException(
                 "Дата назначения участника в задачу некорректна. Дата начала проекта меньше даты назначения."
             );
@@ -40,6 +40,11 @@ public readonly record struct ProjectTaskAssignmentDate
         return new ProjectTaskAssignmentDate(date);
     }
 
+    public static ProjectTaskAssignmentDate Current()
+    {
+        return new ProjectTaskAssignmentDate(DateTime.UtcNow);
+    }
+    
     public static ProjectTaskAssignmentDate Create(DateTime date)
     {
         if (date == DateTime.MinValue)

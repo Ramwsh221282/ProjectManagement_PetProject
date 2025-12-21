@@ -20,6 +20,8 @@ public sealed record ProjectName
         Value = value;
     }
 
+    private ProjectName() { } // ef core
+
     public static ProjectName Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))

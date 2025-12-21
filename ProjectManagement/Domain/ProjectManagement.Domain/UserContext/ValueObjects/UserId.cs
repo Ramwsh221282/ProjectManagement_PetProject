@@ -14,6 +14,11 @@ public readonly record struct UserId
     /// </summary>
     public Guid Value { get; }
 
+    public static UserId NewUserId()
+    {
+        return new UserId(Guid.NewGuid());
+    }
+    
     public static UserId Create(Guid value) =>
         value == Guid.Empty
             ? throw new ArgumentException("Идентификатор пользователя некорректный.")
