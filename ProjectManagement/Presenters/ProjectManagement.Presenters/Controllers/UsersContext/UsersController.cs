@@ -50,7 +50,7 @@ public sealed class UsersController
     /// <param name="handler">Обработчик изменения данных аккаунта</param>
     /// <param name="ct">Токен отмены</param>
     /// <returns>Измененный пользователь</returns>
-    [HttpPost("{id:guid}")]
+    [HttpPut("{id:guid}")]
     public async Task<Envelope> ModifyAccountData(
         [FromRoute(Name = "id")] Guid userId,
         [FromQuery(Name = "email")] string? email,

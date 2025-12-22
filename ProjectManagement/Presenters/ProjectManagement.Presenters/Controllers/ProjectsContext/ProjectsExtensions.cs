@@ -21,6 +21,7 @@ public static class ProjectsExtensions
     
     public static ProjectDto ToDto(this Project project)
     {
+        ProjectMember owner = project.FindMember(project.Ownership.OwnerId.Id);
         return new ProjectDto()
         {
             Id = project.Id.Value,
@@ -29,7 +30,9 @@ public static class ProjectsExtensions
             CreatedAt = project.LifeTime.CreatedAt,
             FinishedAt = project.LifeTime.FinishedAt,
             IsClosed = project.LifeTime.IsFinished,
-            Tasks = project.Tasks.Select(t => t.ToDto())
+            Tasks = project.Tasks.Select(t => t.ToDto()),
+            Members = project.Members.Select(m => m.ToDto()),
+            Owner = owner.ToDto()
         };
     }
 

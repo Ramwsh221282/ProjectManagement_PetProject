@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Npgsql;
 using ProjectManagement.Domain.Contracts;
 using ProjectManagement.Domain.UserContext;
 using ProjectManagement.Domain.UserContext.ValueObjects;
@@ -53,19 +54,23 @@ public sealed class UsersRepository(ApplicationDbContext context) : IUsersReposi
         string phone, 
         CancellationToken ct = default)
     {
-        FormattableString sql = $@"
+        var emailParam = new NpgsqlParameter("@email", email);
+        var loginParam = new NpgsqlParameter("@login", login);
+        var phoneParam = new NpgsqlParameter("@phone", phone);
+        
+        RegistrationCheckResult result = await context.Database
+            .SqlQueryRaw<RegistrationCheckResult>(
+                @"
             SELECT
-            EXISTS(SELECT 1 FROM users WHERE email = {email}) as email_exists,
-            EXISTS(SELECT 1 FROM users WHERE login = {login}) as login_exists,
-            EXISTS(SELECT 1 FROM users WHERE phone_number = {phone}) as phone_exists;
-         ";
+            EXISTS(SELECT 1 FROM users WHERE users.email = @email) as ""EmailExists"",
+            EXISTS(SELECT 1 FROM users WHERE users.login = @login) as ""LoginExists"",
+            EXISTS(SELECT 1 FROM users WHERE users.phone_number = @phone) as ""PhoneExists""    
+         ", emailParam, loginParam, phoneParam
+            ).FirstAsync(ct);
         
-        (bool emailExists, bool loginExists, bool phoneExists) = await context.Database
-            .SqlQuery<(bool, bool, bool)>(sql).FirstAsync(ct);
-        
-        bool isEmailUnique = !emailExists;
-        bool isLoginUnique = !loginExists;
-        bool isPhoneUnique = !phoneExists;
+        bool isEmailUnique = !result.EmailExists;
+        bool isLoginUnique = !result.LoginExists;
+        bool isPhoneUnique = !result.PhoneExists;
         
         return new UserRegistrationApproval(
             HasUniqueEmail: isEmailUnique, 
@@ -81,5 +86,18 @@ public sealed class UsersRepository(ApplicationDbContext context) : IUsersReposi
     public void Delete(User user)
     {
         context.Users.Remove(user);
+    }
+
+    public Task Update(User user, CancellationToken ct = default)
+    {
+        context.Users.Update(user);
+        return Task.CompletedTask;
+    }
+
+    private class RegistrationCheckResult
+    {
+        public bool EmailExists { get; set; }
+        public bool LoginExists { get; set; }
+        public bool PhoneExists { get; set; }
     }
 }

@@ -107,7 +107,11 @@ public sealed class User
             cloned.Login, 
             PhoneNumber.Phone);
         
-        CheckRegistrationApproved(approval);
+        if (!approval.HasUniqueEmail)
+            throw new InvalidOperationException("Почта пользователя не уникальна");
+        if (!approval.HasUniqueLogin)
+            throw new InvalidOperationException("Логин пользователя не уникален");
+        
         AccountData = cloned;
     }
     

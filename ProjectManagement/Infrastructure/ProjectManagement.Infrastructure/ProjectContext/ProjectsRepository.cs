@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using ProjectManagement.Domain.Contracts;
 using ProjectManagement.Domain.ProjectContext;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 using ProjectManagement.Domain.ProjectContext.ValueObjects;
 using ProjectManagement.Infrastructure.Common;
 
@@ -20,31 +22,59 @@ public sealed class ProjectsRepository(ApplicationDbContext context) : IProjects
         await context.Projects.AddAsync(project, ct);
     }
 
-    public async Task<Project?> GetProject(Guid id, bool withLock = false, CancellationToken ct = default)
+    public async Task<Project?> GetProjectDemo(Guid id)
     {
-        if (!withLock)
-        {
-            return await context.Projects
-                .Include(p => p.Tasks)
-                .Include(p => p.Members)
-                .Include(p => p.Ownership)
-                .FirstOrDefaultAsync(p => p.Id == ProjectId.Create(id), ct);
-        }
-
-        FormattableString sql = $@"
-                SELECT p.*, t.*, m.*, o.*
-                FROM projects p
-                LEFT JOIN project_tasks t ON p.id = t.project_id
-                LEFT JOIN project_members m ON p.id = m.project_id
-                LEFT JOIN project_ownerships o ON p.id = o.project_id
-                WHERE p.id = {id}
-                FOR UPDATE OF p, t
-          ";
-        
-        return await context.Projects.FromSqlInterpolated(sql)
+        ProjectId idVo = ProjectId.Create(id);
+        Project? project = await context.Projects
             .Include(p => p.Tasks)
             .Include(p => p.Members)
             .Include(p => p.Ownership)
-            .FirstOrDefaultAsync(ct);
+            .FirstOrDefaultAsync(p => p.Id == idVo);
+        return project;
+    }
+    
+    public async Task<Project?> GetProject(Guid id, bool withLock = false, CancellationToken ct = default)
+    {
+        ProjectId idVo = ProjectId.Create(id);
+        if (withLock) await BlockProjectRow(idVo, ct);
+        return await context.Projects
+            .Include(p => p.Tasks)
+            .Include(p => p.Members)
+            .Include(p => p.Ownership)
+            .FirstOrDefaultAsync(p => p.Id == idVo, ct);
+    }
+
+    public async Task<bool> Exists(ProjectTaskAssignment assignment, CancellationToken ct = default)
+    {
+        Guid memberId = assignment.MemberId.Value;
+        Guid taskId = assignment.TaskId.Value;
+        NpgsqlParameter memberIdParam = new("@memberId", memberId);
+        NpgsqlParameter taskIdParam = new("@taskId", taskId);
+        AssignmentExistsResult result = await context.Database.SqlQueryRaw<AssignmentExistsResult>(@"
+        SELECT EXISTS(SELECT 1 FROM project_task_assigmnets p 
+                                WHERE p.member_id = @memberId AND p.task_id = @taskId
+                                ) as ""Exists""
+         ", memberIdParam, taskIdParam).FirstAsync(ct);
+        return result.Exists;
+    }
+
+    private async Task BlockProjectRow(ProjectId id, CancellationToken ct)
+    {
+        Guid primitiveId = id.Value;
+        FormattableString sql = $@"
+                SELECT p.id as project_id, t.id as task_id, m.member_id as member_id, o.owner_id as owner_id
+                FROM projects p
+                INNER JOIN project_tasks t ON p.id = t.project_id
+                INNER JOIN project_members m ON p.id = m.project_id
+                INNER JOIN project_ownerships o ON p.id = o.project_id
+                WHERE p.id = {primitiveId}
+                FOR UPDATE OF p, t
+          ";
+        await context.Database.ExecuteSqlInterpolatedAsync(sql, ct);
+    }
+
+    private sealed class AssignmentExistsResult
+    {
+        public bool Exists { get; set; }
     }
 }

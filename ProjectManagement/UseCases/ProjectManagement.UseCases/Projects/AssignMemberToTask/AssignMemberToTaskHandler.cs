@@ -6,7 +6,9 @@ using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
 
 namespace ProjectManagement.UseCases.Projects.AssignMemberToTask;
 
-public sealed class AssignMemberToTaskHandler(IProjectsRepository projects, IUnitOfWork unitOfWork)
+public sealed class AssignMemberToTaskHandler(
+    IProjectsRepository projects, 
+    IUnitOfWork unitOfWork)
 {
     public async Task<ProjectTaskAssignment> Handle(AssignMemberToTaskCommand command, CancellationToken ct = default)
     {
@@ -20,6 +22,7 @@ public sealed class AssignMemberToTaskHandler(IProjectsRepository projects, IUni
         ProjectMember member = project.FindMember(command.MemberId);
 
         ProjectTaskAssignment assignment = project.FormAssignment(task, member);
+        
         await unitOfWork.SaveChangesAsync(ct);
         return assignment;
     }

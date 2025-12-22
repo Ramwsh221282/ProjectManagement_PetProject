@@ -14,4 +14,5 @@ public interface IUsersRepository
         CancellationToken ct = default);
     Task Add(User user, CancellationToken ct = default);
     void Delete(User user);
+    Task Update(User user, CancellationToken ct = default);
 }

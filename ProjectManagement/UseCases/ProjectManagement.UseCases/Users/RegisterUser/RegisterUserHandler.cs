@@ -18,15 +18,12 @@ public sealed class RegisterUserHandler
     
     public async Task<User> Handle(RegisterUserCommand command, CancellationToken ct = default)
     {
-        // Тот самый User, который имеет Added State
         User user = await User.CreateNew(
             command.Email, 
             command.Login, 
             command.Phone, 
             Users, ct);
         
-        // Поскольку User имеет Added State,
-        // он будет сохранен в БД при вызове SaveChangesAsync
         await UnitOfWork.SaveChangesAsync(ct);
         
         return user;

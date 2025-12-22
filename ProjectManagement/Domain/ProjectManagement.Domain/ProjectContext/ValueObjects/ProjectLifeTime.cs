@@ -8,40 +8,40 @@ public sealed record ProjectLifeTime
     /// <summary>
     /// Дата создания проекта
     /// </summary>
-    public DateOnly CreatedAt { get; }
+    public DateTime CreatedAt { get; }
 
     /// <summary>
     /// Дата окончания проекта
     /// </summary>
-    public DateOnly? FinishedAt { get; }
+    public DateTime? FinishedAt { get; }
 
     private ProjectLifeTime() { } // ef core
 
-    public ProjectLifeTime(DateOnly createdAt)
+    public ProjectLifeTime(DateTime createdAt)
     {
         CreatedAt = createdAt;
         FinishedAt = null;
     }
 
-    public bool IsFinished => FinishedAt != null && FinishedAt.Value < DateOnly.FromDateTime(DateTime.UtcNow);
+    public bool IsFinished => FinishedAt != null && FinishedAt.Value < DateTime.UtcNow;
     
-    private ProjectLifeTime(DateOnly createdAt, DateOnly? finishedAt)
+    private ProjectLifeTime(DateTime createdAt, DateTime? finishedAt)
     {
         CreatedAt = createdAt;
         FinishedAt = finishedAt;
     }
 
-    public ProjectLifeTime Closed(DateOnly closedAt)
+    public ProjectLifeTime Closed(DateTime closedAt)
     {
         return new ProjectLifeTime(CreatedAt, closedAt);
     }
     
-    public static ProjectLifeTime Create(DateOnly createdAt, DateOnly? finishedAt)
+    public static ProjectLifeTime Create(DateTime createdAt, DateTime? finishedAt)
     {
-        if (createdAt == DateOnly.MaxValue)
+        if (createdAt == DateTime.MaxValue)
             throw new ArgumentException("Некорректная дата начала проекта.");
 
-        if (createdAt == DateOnly.MinValue)
+        if (createdAt == DateTime.MinValue)
             throw new ArgumentException("Некорректная дата начала проекта");
         
         if (finishedAt == null)

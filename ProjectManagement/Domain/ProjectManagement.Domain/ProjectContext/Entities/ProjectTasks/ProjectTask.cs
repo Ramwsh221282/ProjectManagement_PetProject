@@ -84,8 +84,6 @@ public sealed class ProjectTask
     
     public void AddAssignment(ProjectTaskAssignment assignment)
     {
-        if (_assignments.Any(a => a.MemberId == assignment.MemberId && a.TaskId == assignment.TaskId))
-            throw new InvalidOperationException("Участник уже назначен на эту задачу.");
         _assignments.Add(assignment);
     }
 

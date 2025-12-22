@@ -4,6 +4,7 @@ using ProjectManagement.Domain.ProjectContext;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectOwnershipping;
 using ProjectManagement.Domain.ProjectContext.ValueObjects;
+using ProjectManagement.Infrastructure.Extensions;
 
 namespace ProjectManagement.Infrastructure.ProjectContext.Configurations;
 
@@ -47,8 +48,13 @@ public sealed class ProjectEntityConfiguration : IEntityTypeConfiguration<Projec
             x => x.LifeTime,
             cpb =>
             {
-                cpb.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
-                cpb.Property(x => x.FinishedAt).HasColumnName("finished_at").IsRequired(false);
+                cpb.Property(x => x.CreatedAt)
+                    .HasColumnName("created_at")
+                    .IsRequired()
+                    .HasConversion(toDb => toDb.ToUtc(), fromDb => fromDb.ToUtc());
+                
+                cpb.Property(x => x.FinishedAt).HasColumnName("finished_at").IsRequired(false)
+                    .HasConversion(toDb => toDb.ToUtc(), fromDb => fromDb.ToUtc());
             }
         );
         

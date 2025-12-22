@@ -177,7 +177,7 @@ public sealed class Project
     {
         if (IsFinished()) throw new InvalidOperationException("Проект уже закрыт.");
         
-        ProjectLifeTime life = LifeTime.Closed(DateOnly.FromDateTime(DateTime.UtcNow));
+        ProjectLifeTime life = LifeTime.Closed(DateTime.UtcNow);
         
         LifeTime = life;
     }
@@ -235,7 +235,7 @@ public sealed class Project
             Name = name,
             Description = description,
             Ownership = ownership,
-            LifeTime = ProjectLifeTime.Create(DateOnly.FromDateTime(DateTime.UtcNow), null),
+            LifeTime = ProjectLifeTime.Create(DateTime.UtcNow, null),
             _members = [],
             _tasks = [],
         };

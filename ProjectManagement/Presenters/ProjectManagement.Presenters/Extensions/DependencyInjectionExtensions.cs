@@ -4,6 +4,7 @@ using ProjectManagement.Infrastructure.ProjectContext;
 using ProjectManagement.Infrastructure.UserContext;
 using ProjectManagement.UseCases.Projects.AddProjectMembers;
 using ProjectManagement.UseCases.Projects.AddProjectTasks;
+using ProjectManagement.UseCases.Projects.AssignMemberToTask;
 using ProjectManagement.UseCases.Projects.CloseProjectTask;
 using ProjectManagement.UseCases.Projects.CreateProjectByUser;
 using ProjectManagement.UseCases.Projects.UpdateProjectInfo;
@@ -23,6 +24,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IUsersRepository, UsersRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ITransactionSource, TransactionSource>();
+        services.AddScoped<ProjectsRepository>();
     }
     
     public static void RegisterProjectsUseCases(this IServiceCollection services)
@@ -33,6 +35,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<CloseProjectTaskHandler>();
         services.AddScoped<CreateProjectByUserHandler>();
         services.AddScoped<UpdateProjectInfoHandler>();
+        services.AddScoped<AssignMemberToTaskHandler>();
     }
     
     public static void RegisterUsersUseCases(this IServiceCollection services)
