@@ -21,7 +21,7 @@ public static class ProjectsExtensions
     
     public static ProjectDto ToDto(this Project project)
     {
-        ProjectMember owner = project.FindMember(project.Ownership.OwnerId.Id);
+        ProjectMember owner = project.FindMember(project.Ownership.OwnerId.Id).OnSuccess;
         return new ProjectDto()
         {
             Id = project.Id.Value,

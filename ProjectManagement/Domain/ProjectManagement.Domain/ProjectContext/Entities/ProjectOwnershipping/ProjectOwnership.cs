@@ -36,13 +36,13 @@ public sealed class ProjectOwnership
     public ProjectOwnership(ProjectId projectId, User user)
     {
         ProjectId = projectId;
-        OwnerId = ProjectOwnerId.Create(user.UserId.Value);
+        OwnerId = ProjectOwnerId.Create(user.UserId.Value).OnSuccess;
     }
 
     public ProjectOwnership(Project project, ProjectMember member)
     {
         ProjectId = project.Id;
-        OwnerId = ProjectOwnerId.Create(member.MemberId.Value);
+        OwnerId = ProjectOwnerId.Create(member.MemberId.Value).OnSuccess;
     }
     
     /// <summary>

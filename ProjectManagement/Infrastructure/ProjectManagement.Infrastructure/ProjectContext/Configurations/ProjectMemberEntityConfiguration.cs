@@ -23,14 +23,14 @@ public sealed class ProjectMemberEntityConfiguration : IEntityTypeConfiguration<
         builder
             .Property(x => x.MemberId)
             .HasColumnName("member_id")
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectMemberId.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectMemberId.Create(fromDb).OnSuccess);
 
         // конфигурирование ключа projectId
         builder
             .Property(x => x.ProjectId)
             .IsRequired()
             .HasColumnName("project_id")
-            .HasConversion(toDb => toDb!.Value.Value, fromDb => ProjectId.Create(fromDb));
+            .HasConversion(toDb => toDb!.Value.Value, fromDb => ProjectId.Create(fromDb).OnSuccess);
 
         // конфигурирование логина
         builder
@@ -38,7 +38,7 @@ public sealed class ProjectMemberEntityConfiguration : IEntityTypeConfiguration<
             .HasColumnName("member_login")
             .HasMaxLength(ProjectMemberLogin.MAX_PROJECT_MEMBER_LOGIN_LENGTH)
             .IsRequired()
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectMemberLogin.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectMemberLogin.Create(fromDb).OnSuccess);
 
         // индекс уникальности для логина
         builder.HasIndex(x => x.Login).IsUnique();

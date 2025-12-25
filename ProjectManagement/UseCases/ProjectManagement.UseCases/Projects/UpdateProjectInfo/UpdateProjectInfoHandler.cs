@@ -1,26 +1,44 @@
 ﻿using ProjectManagement.Domain.Contracts;
 using ProjectManagement.Domain.ProjectContext;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.UseCases.Projects.UpdateProjectInfo;
 
-public sealed class UpdateProjectInfoHandler(IProjectsRepository repository)
+public sealed class UpdateProjectInfoHandler(
+    IProjectsRepository repository,
+    IUnitOfWork unitOfWork,
+    ITransactionSource transactionSource)
 {
-    public async Task<Project> Handle(UpdateProjectInfoCommand command, CancellationToken ct = default)
+    public async Task<Result<Project, Error>> Handle(UpdateProjectInfoCommand command, CancellationToken ct = default)
     {
-        Project? project = await repository.GetProject(command.ProjectId);
-        if (project is null) throw new InvalidOperationException("Проект не найден.");
+        await using ITransactionScope scope = await transactionSource.BeginTransactionScope(ct);
         
-        ProjectMember creator = project.FindMember(command.CreatorId);
-        if (!creator.IsOwning(project)) throw new InvalidOperationException("Участник не является владельцем проекта.");
+        Result<Project, Nothing> project = await repository.GetProject(command.ProjectId, withLock: true, ct);
+        if (project.IsFailure) return Failure<Project, Error>(Error.NotFound("Проект не найден."));
         
-        if (command.NothingToUpdate()) return project;
+        Result<ProjectMember, Nothing> creator = project.OnSuccess.FindMember(command.CreatorId);
+        if (creator.IsFailure) return Failure<Project, Error>(Error.NotFound("Создатель проекта не найден."));
         
-        project.Update(command.NewName, command.NewDescription);
-        ProjectRegistrationApproval approval = await repository.CheckProjectNameUniqueness(project.Name, ct);
+        if (!creator.OnSuccess.IsOwning(project.OnSuccess)) 
+            return Failure<Project, Error>(Error.Conflict("Участник не является владельцем проекта."));
         
-        if (!approval.HasUniqueName) throw new InvalidOperationException("Проект с таким названием уже существует.");
-        await repository.Add(project, ct);
-        return project;
+        if (command.NothingToUpdate()) return Success<Project, Error>(project.OnSuccess);
+        
+        Result<Unit, Error> update = project.OnSuccess.Update(command.NewName, command.NewDescription);
+        if (update.IsFailure) return Failure<Project, Error>(update.OnError);
+        
+        ProjectRegistrationApproval approval = await repository.GetApproval(project.OnSuccess.Name, ct);
+        if (!approval.HasUniqueName) return Failure<Project, Error>(Error.Conflict("Проект с таким названием уже существует."));
+        
+        Result<Unit, Error> saving = await unitOfWork.SaveChangesAsync(ct);
+        if (saving.IsFailure) 
+            return Failure<Project, Error>(saving.OnError);
+        
+        Result<Unit, Error> commit = await scope.CommitAsync(ct);
+        
+        return commit.IsFailure 
+            ? Failure<Project, Error>(commit.OnError) 
+            : Success<Project, Error>(project.OnSuccess);
     }
 }

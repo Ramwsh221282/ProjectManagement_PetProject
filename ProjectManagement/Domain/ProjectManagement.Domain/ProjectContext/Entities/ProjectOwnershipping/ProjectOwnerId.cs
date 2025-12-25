@@ -1,13 +1,15 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectOwnershipping;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectOwnershipping;
 
 public sealed record ProjectOwnerId(Guid Id)
 {
     private ProjectOwnerId() : this(Guid.Empty) { } // ef core
 
-    public static ProjectOwnerId Create(Guid id)
+    public static Result<ProjectOwnerId, Error> Create(Guid id)
     {
         if (id == Guid.Empty)
-            throw new InvalidOperationException("Идентификатор владельца проекта некорректный.");
-        return new ProjectOwnerId(id);
+            return Failure<ProjectOwnerId, Error>(Error.InvalidFormat("Идентификатор владельца проекта некорректный."));
+        return Success<ProjectOwnerId, Error>(new ProjectOwnerId(id));
     }
 }

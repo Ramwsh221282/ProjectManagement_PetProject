@@ -1,4 +1,7 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.ValueObjects;
+﻿using System.Diagnostics;
+using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.ValueObjects;
 
 /// <summary>
 /// Описание проекта
@@ -25,16 +28,15 @@ public sealed record ProjectDescription
         // ef core
     }
 
-    public static ProjectDescription Create(string value)
+    public static Result<ProjectDescription, Error> Create(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Описание проекта было пустым.");
-
-        if (value.Length > MAX_PROJECT_DESCRIPTION_LENGTH)
-            throw new ArgumentException(
-                $"Длина проекта превышает длину в {MAX_PROJECT_DESCRIPTION_LENGTH} символов."
-            );
-
-        return new ProjectDescription(value);
+         ErrorResult<ProjectDescription> result = value switch
+        {
+            { } when string.IsNullOrWhiteSpace(value) => Error.Validation("Описание проекта было пустым."),
+            { } when value.Length > MAX_PROJECT_DESCRIPTION_LENGTH => Error.Validation($"Длина проекта превышает длину в {MAX_PROJECT_DESCRIPTION_LENGTH} символов."),
+            { } => new ProjectDescription(value),
+            _ => throw new UnreachableException()
+        };
+        return result;
     }
 }

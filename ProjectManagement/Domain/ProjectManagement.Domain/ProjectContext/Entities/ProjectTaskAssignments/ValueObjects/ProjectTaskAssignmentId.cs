@@ -1,4 +1,6 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments.ValueObjects;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments.ValueObjects;
 
 public readonly record struct ProjectTaskAssignmentId
 {
@@ -14,11 +16,11 @@ public readonly record struct ProjectTaskAssignmentId
         Value = value;
     }
 
-    public static ProjectTaskAssignmentId Create(Guid value)
+    public static Result<ProjectTaskAssignmentId, Error> Create(Guid value)
     {
         if (value == Guid.Empty)
-            throw new ArgumentException("Идентификатор назначения участника в задачу некорректный.");
-        return new ProjectTaskAssignmentId(value);
+            return Failure<ProjectTaskAssignmentId, Error>(Error.InvalidFormat("Идентификатор назначения участника в задачу некорректный."));
+        return Success<ProjectTaskAssignmentId, Error>(new ProjectTaskAssignmentId(value));
     }
 
     public static ProjectTaskAssignmentId New()

@@ -1,4 +1,6 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
 
 /// <summary>
 /// Идентификатор задачи
@@ -17,8 +19,8 @@ public readonly record struct ProjectTaskId
         Value = value;
     }
 
-    public static ProjectTaskId Create(Guid value) =>
+    public static Result<ProjectTaskId, Error> Create(Guid value) =>
         value == Guid.Empty
-            ? throw new ArgumentException("Некоррекнтый идентификатор задачи проекта.")
-            : new ProjectTaskId(value);
+            ? Failure<ProjectTaskId, Error>(Error.InvalidFormat("Некорректный идентификатор задачи проекта."))
+            : Success<ProjectTaskId, Error>(new ProjectTaskId(value));
 }

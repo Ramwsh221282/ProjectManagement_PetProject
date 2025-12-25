@@ -21,21 +21,21 @@ public sealed class UserEntityConfiguration : IEntityTypeConfiguration<User>
         
         builder.Property(x => x.UserId)
             .HasColumnName("id")
-            .HasConversion(toDb => toDb.Value, fromDb => UserId.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => UserId.Create(fromDb).OnSuccess);
 
         // конфигурация свойства phoneNumber как столбца таблицы phone_number
         builder
             .Property(x => x.PhoneNumber)
             .IsRequired()
             .HasColumnName("phone_number")
-            .HasConversion(toDb => toDb.Phone, fromDb => UserPhoneNumber.Create(fromDb));
+            .HasConversion(toDb => toDb.Phone, fromDb => UserPhoneNumber.Create(fromDb).OnSuccess);
 
         // конфигурация свойства registrationDate как столбца таблицы registration_date
         builder
             .Property(x => x.RegistrationDate)
             .IsRequired()
             .HasColumnName("registration_date")
-            .HasConversion(toDb => toDb.Value, fromDb => UserRegistrationDate.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => UserRegistrationDate.Create(fromDb).OnSuccess);
         
         builder.ComplexProperty(
             x => x.Status,

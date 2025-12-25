@@ -2,6 +2,7 @@
 using ProjectManagement.Domain.ProjectContext;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.UseCases.Projects.CloseProjectTask;
 
@@ -10,22 +11,34 @@ public sealed class CloseProjectTaskHandler(
     ITransactionSource transactionSource, 
     IUnitOfWork unitOfWork)
 {
-    public async Task<ProjectTask> Handle(CloseProjectTaskCommand command, CancellationToken ct = default)
+    public async Task<Result<ProjectTask, Error>> Handle(CloseProjectTaskCommand command, CancellationToken ct = default)
     {
         await using ITransactionScope scope = await transactionSource.BeginTransactionScope(ct);
         
-        Project? project = await repository.GetProject(command.ProjectId, withLock: true, ct);
-        if (project is null) throw new InvalidOperationException("Проект не найден.");
+        Result<Project, Nothing> project = await repository.GetProject(command.ProjectId, withLock: true, ct);
+        if (project.IsFailure)
+            return Failure<ProjectTask, Error>(Error.NotFound("Проект не найден."));
         
-        ProjectMember closer = project.FindMember(command.CloserId);
-        if (!closer.IsOwning(project)) throw new InvalidOperationException("Участник не является владельцем проекта.");
+        Result<ProjectMember, Nothing> closer = project.OnSuccess.FindMember(command.CloserId);
+        if (closer.IsFailure)
+            return Failure<ProjectTask, Error>(Error.NotFound("Обладатель проекта не найден."));
         
-        ProjectTask task = project.FindTask(command.TaskId);
-        project.CloseTask(task);
+        Result<ProjectTask, Nothing> task = project.OnSuccess.FindTask(command.TaskId);
+        if (task.IsFailure)
+            return Failure<ProjectTask, Error>(Error.NotFound("Задача не найдена."));
         
-        await unitOfWork.SaveChangesAsync(ct);
-        await scope.CommitAsync(ct); 
+        Result<Unit, Error> closing = project.OnSuccess.CloseTask(task.OnSuccess);
+        if (closing.IsFailure)
+            return Failure<ProjectTask, Error>(closing.OnError);
         
-        return task;
+        Result<Unit, Error> saving = await unitOfWork.SaveChangesAsync(ct);
+        if (saving.IsFailure) 
+            return Failure<ProjectTask, Error>(saving.OnError);
+        
+        Result<Unit, Error> commit = await scope.CommitAsync(ct); 
+        
+        return commit.IsFailure 
+            ? Failure<ProjectTask, Error>(commit.OnError) 
+            : Success<ProjectTask, Error>(task.OnSuccess);
     }
 }

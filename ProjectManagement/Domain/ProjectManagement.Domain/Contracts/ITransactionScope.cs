@@ -1,6 +1,8 @@
-﻿namespace ProjectManagement.Domain.Contracts;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.Contracts;
 
 public interface ITransactionScope : IDisposable, IAsyncDisposable
 {
-    Task CommitAsync(CancellationToken ct = default);
+    Task<Result<Unit, Error>> CommitAsync(CancellationToken ct = default);
 }

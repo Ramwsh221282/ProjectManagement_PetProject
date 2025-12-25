@@ -1,3 +1,5 @@
+using ProjectManagement.Domain.Utilities;
+
 namespace ProjectManagement.Domain.UserContext.ValueObjects;
 
 public readonly record struct UserRegistrationDate
@@ -11,18 +13,16 @@ public readonly record struct UserRegistrationDate
     /// </summary>
     public DateOnly Value { get; }
 
-    public static UserRegistrationDate CreateByCurrentDate()
-    {
-        return new UserRegistrationDate(DateOnly.FromDateTime(DateTime.UtcNow));
-    }
+    public static UserRegistrationDate CreateByCurrentDate() => new(DateOnly.FromDateTime(DateTime.UtcNow));
     
-    public static UserRegistrationDate Create(DateOnly value)
+    public static Result<UserRegistrationDate, Error> Create(DateOnly value)
     {
-        if (value == DateOnly.MinValue)
-            throw new ArgumentException("Дата регистрации пользователя некорректна");
-
-        return value == DateOnly.MaxValue
-            ? throw new ArgumentException("Дата регистрации пользователя некорректна")
-            : new UserRegistrationDate(value);
+        ErrorResult<UserRegistrationDate> result = value switch
+        {
+            { } when value == DateOnly.MinValue => Error.InvalidFormat("Дата регистрации пользователя некорректна"),
+            { } when value == DateOnly.MaxValue => Error.InvalidFormat("Дата регистрации пользователя некорректна"),
+            { } => new UserRegistrationDate(value),
+        };
+        return result;
     }
 }

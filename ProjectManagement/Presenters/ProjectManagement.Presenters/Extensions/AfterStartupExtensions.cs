@@ -11,6 +11,7 @@ public static class AfterStartupExtensions
         await using ApplicationDbContext context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         try
         {
+            await context.Database.EnsureDeletedAsync();
             await context.Database.MigrateAsync();
         }
         catch

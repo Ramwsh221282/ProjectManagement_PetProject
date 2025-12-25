@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.Presenters.Controllers;
 
@@ -33,5 +34,27 @@ public sealed class Envelope : IResult
         httpContext.Response.StatusCode = Status;
         httpContext.Response.ContentType = "application/json";
         return httpContext.Response.WriteAsJsonAsync(this);
+    }
+
+    public static Envelope FromResult<T, Y>(Result<T, Error> result, Func<T, Y> successMapper)
+    {
+        if (result.IsSuccess)
+            return new Envelope(HttpStatusCode.OK, successMapper(result.OnSuccess));
+        HttpStatusCode code = StatusCodeFromResult(result);
+        return new Envelope(code, null, result.OnError.Message);
+    }
+
+    private static HttpStatusCode StatusCodeFromResult<T>(Result<T, Error> result)
+    {
+        return result.OnError.Type switch
+        {
+            ErrorType.NotFound => HttpStatusCode.NotFound,
+            ErrorType.Conflict => HttpStatusCode.Conflict,
+            ErrorType.InternalError => HttpStatusCode.InternalServerError,
+            ErrorType.Validation => HttpStatusCode.BadRequest,
+            ErrorType.InvalidFormat => HttpStatusCode.BadRequest,
+            ErrorType.None => throw new InvalidOperationException("None error type specified in operation result."),
+            _ => HttpStatusCode.InternalServerError
+        };
     }
 }

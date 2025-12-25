@@ -3,6 +3,7 @@ using ProjectManagement.Domain.ProjectContext;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
 using ProjectManagement.Domain.UserContext;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.UseCases.Projects.AddProjectMembers;
 
@@ -12,36 +13,52 @@ public sealed class AddProjectMembersHandler(
     ITransactionSource transactionSource, 
     IUnitOfWork unitOfWork)
 {
-    public async Task<IEnumerable<ProjectMember>> Handle(
-        AddProjectMembersCommand command, 
-        CancellationToken ct = default)
+    public async Task<Result<IEnumerable<ProjectMember>, Error>> Handle(AddProjectMembersCommand command, CancellationToken ct = default)
     {
         await using ITransactionScope scope = await transactionSource.BeginTransactionScope(ct);
         
-        Project? project = await projects.GetProject(command.ProjectId, withLock: true, ct);
-        if (project is null) throw new InvalidOperationException("Проект не найден.");
+        Result<Project, Nothing> project = await projects.GetProject(command.ProjectId, withLock: true, ct);
+        if (project.IsFailure)
+            return Failure<IEnumerable<ProjectMember>, Error>(Error.NotFound("Проект не найден."));
         
-        ProjectMember creator = project.FindMember(command.CreatorId);
-        if (!creator.IsOwning(project)) throw new InvalidOperationException("Участник не является владельцем проекта.");
+        Result<ProjectMember, Nothing> creator = project.OnSuccess.FindMember(command.CreatorId);
+        if (creator.IsFailure) 
+            return Failure<IEnumerable<ProjectMember>, Error>(Error.NotFound("Участник не найден."));
         
-        ProjectMember[] membersToAdd = [..await GetProjectMembers(command, ct)];
-        project.AddMembers(membersToAdd);
+        if (!creator.OnSuccess.IsOwning(project.OnSuccess)) 
+            return Failure<IEnumerable<ProjectMember>, Error>(Error.Conflict("Участник не является владельцем проекта."));
         
-        await unitOfWork.SaveChangesAsync(ct);
-        await scope.CommitAsync(ct);
-        return membersToAdd;
+        Result<IEnumerable<ProjectMember>, Error> membersToAdd = await GetProjectMembers(command, ct);
+        project.OnSuccess.AddMembers(membersToAdd.OnSuccess);
+        
+        Result<Unit, Error> saving = await unitOfWork.SaveChangesAsync(ct);
+        if (saving.IsFailure) 
+            return Failure<IEnumerable<ProjectMember>, Error>(saving.OnError);
+        
+        Result<Unit, Error> commit = await scope.CommitAsync(ct);
+        return commit.IsFailure 
+            ? Failure<IEnumerable<ProjectMember>, Error>(commit.OnError) 
+            : Success<IEnumerable<ProjectMember>, Error>(membersToAdd.OnSuccess);
     }
 
-    private async Task<IEnumerable<ProjectMember>> GetProjectMembers(AddProjectMembersCommand command, CancellationToken ct)
+    private async Task<Result<IEnumerable<ProjectMember>, Error>> GetProjectMembers(AddProjectMembersCommand command, CancellationToken ct)
     {
         IEnumerable<User> usersToAdd = await users.GetUsers(command.MemberIds, withLock: true, ct);
-        return usersToAdd.Select(TransformUserToProjectMember);
+        Result<ProjectMember, Error>[] members = [..usersToAdd.Select(TransformUserToProjectMember)];
+        Result<ProjectMember, Error>? failure = members.FirstOrDefault(v => v.IsFailure);
+        if (failure is not null) return Failure<IEnumerable<ProjectMember>, Error>(failure.OnError);
+        return Success<IEnumerable<ProjectMember>, Error>(members.Select(m => m.OnSuccess));
     }
 
-    private static ProjectMember TransformUserToProjectMember(User user)
+    private static Result<ProjectMember, Error> TransformUserToProjectMember(User user)
     {
-        ProjectMemberId memberId = ProjectMemberId.Create(user.UserId.Value);
-        ProjectMemberLogin memberLogin = ProjectMemberLogin.Create(user.AccountData.Login);
-        return ProjectMember.CreateNewContributor(memberId, memberLogin);
+        Result<ProjectMemberId, Error> memberId = ProjectMemberId.Create(user.UserId.Value);
+        if (memberId.IsFailure) return Failure<ProjectMember, Error>(memberId.OnError);
+        
+        Result<ProjectMemberLogin, Error> memberLogin = ProjectMemberLogin.Create(user.AccountData.Login);
+        if (memberLogin.IsFailure) return Failure<ProjectMember, Error>(memberLogin.OnError);
+        
+        ProjectMember member = ProjectMember.CreateNewContributor(memberId.OnSuccess, memberLogin.OnSuccess); 
+        return Success<ProjectMember, Error>(member);
     }
 }

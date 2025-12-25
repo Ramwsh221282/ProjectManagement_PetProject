@@ -1,4 +1,6 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
 
 /// <summary>
 /// Лимит участников задачи
@@ -14,8 +16,8 @@ public readonly record struct ProjectTaskMembersLimit
 
     private ProjectTaskMembersLimit(short value) => Value = value;
 
-    public static ProjectTaskMembersLimit Create(short value) =>
+    public static Result<ProjectTaskMembersLimit, Error> Create(short value) =>
         value < 0
-            ? throw new ArgumentException("Количество участников задачи не может быть больше 0")
-            : new ProjectTaskMembersLimit(value);
+            ? Failure<ProjectTaskMembersLimit, Error>(Error.InvalidFormat("Количество участников задачи не может быть больше 0"))
+            : Success<ProjectTaskMembersLimit, Error>(new ProjectTaskMembersLimit(value));
 }

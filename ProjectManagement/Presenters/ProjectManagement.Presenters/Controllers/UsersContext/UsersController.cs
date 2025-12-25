@@ -2,6 +2,7 @@
 using ProjectManagement.Domain.UserContext;
 using ProjectManagement.Domain.UserContext.ValueObjects;
 using ProjectManagement.Domain.UserContext.ValueObjects.Enumerations;
+using ProjectManagement.Domain.Utilities;
 using ProjectManagement.Infrastructure.UserContext;
 using ProjectManagement.Presenters.Controllers.ProjectsContext;
 using ProjectManagement.UseCases.Projects.CreateProjectByUser;
@@ -37,8 +38,8 @@ public sealed class UsersController
         )
     {
         RegisterUserCommand command = new(Email: email, Login: login, Phone: phone);
-        User user = await handler.Handle(command, ct);
-        return new Envelope(user.ToDto());
+        Result<User, Error> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, user => user.ToDto());
     }
     
     /// <summary>
@@ -60,8 +61,8 @@ public sealed class UsersController
         )
     {
         ModifyUserAccountDataCommand command = new(userId, email, login);
-        User user = await handler.Handle(command, ct);
-        return new Envelope(user.ToDto());
+        Result<User, Error> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, user => user.ToDto());
     }
     
     /// <summary>
@@ -79,7 +80,7 @@ public sealed class UsersController
         )
     {
         RemoveUserCommand command = new(userId);
-        User user = await handler.Handle(command, ct);
-        return new Envelope(user.ToDto());
+        Result<User, Error> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, user => user.ToDto());
     }
 }

@@ -1,4 +1,5 @@
 using ProjectManagement.Presenters.Extensions;
+using ProjectManagement.Presenters.Middlewares;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -15,5 +16,6 @@ await app.ApplyMigrations();
 app.MapControllers();
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.Run();

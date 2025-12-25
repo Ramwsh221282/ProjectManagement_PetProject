@@ -11,7 +11,12 @@ namespace ProjectManagement.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(
-                "CREATE UNIQUE INDEX IF NOT EXISTS project_task_assignments_task_id_member_id ON project_task_assigmnets (task_id, member_id)"
+                """
+                CREATE UNIQUE INDEX
+                IF NOT EXISTS 
+                project_task_assignments_task_id_member_id 
+                ON project_task_assigmnets (task_id, member_id)
+                """
                 );
         }
 

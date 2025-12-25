@@ -1,6 +1,8 @@
-﻿using ProjectManagement.Domain.Contracts;
+﻿using System.Diagnostics;
+using ProjectManagement.Domain.Contracts;
 using ProjectManagement.Domain.UserContext.ValueObjects;
 using ProjectManagement.Domain.UserContext.ValueObjects.Enumerations;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.Domain.UserContext;
 
@@ -44,18 +46,19 @@ public sealed class User
     /// <param name="approval">Разрешение на регистрацию</param>
     /// <returns>Зарегистрированный пользователь</returns>
     /// <exception cref="InvalidOperationException">Ошибка регистрации пользователя (не уникальный логин, почта или номер телефона)</exception>
-    public static User CreateNew(
+    public static Result<User, Error> CreateNew(
         UserAccountData accountData, 
         UserPhoneNumber phoneNumber, 
         UserRegistrationApproval approval)
     {
-        CheckRegistrationApproved(approval);
+        Result<Unit, Error> approved = CheckRegistrationApproved(approval);
+        if (approved.IsFailure) return Failure<User, Error>(approved.OnError);
         
         var registrationDate = UserRegistrationDate.CreateByCurrentDate();
         var status = UserStatuses.Online;
         var userId = UserId.NewUserId();
         
-        return new User
+        User user = new User
         {
             AccountData = accountData,
             PhoneNumber = phoneNumber,
@@ -63,56 +66,67 @@ public sealed class User
             Status = status,
             UserId = userId
         };
+        
+        return Success<User, Error>(user);
     }
 
-    public static async Task<User> CreateNew(
+    public static async Task<Result<User, Error>> CreateNew(
         string email,
         string login,
-        string phoneNumber,
+        UserPhoneNumber phone,
         IUsersRepository users,
         CancellationToken ct = default
         )
     {
-        var accountData = UserAccountData.Create(email, login);
-        var phone = UserPhoneNumber.Create(phoneNumber);
-        var registrationDate = UserRegistrationDate.CreateByCurrentDate();
-        var status = UserStatuses.Online;
-        var userId = UserId.NewUserId();
+        Result<UserAccountData, Error> accountData = UserAccountData.Create(email, login);
+        if (accountData.IsFailure) return Failure<User, Error>(accountData.OnError);
+        
+        UserRegistrationDate registrationDate = UserRegistrationDate.CreateByCurrentDate();
+        UserStatuses status = UserStatuses.Online;
+        UserId userId = UserId.NewUserId();
         
         var approval = await users.CheckRegistrationApproval(
-            accountData.Email, 
-            accountData.Login, 
+            accountData.OnSuccess.Email, 
+            accountData.OnSuccess.Login, 
             phone.Phone, ct);
         
         CheckRegistrationApproved(approval);
-        User user = Create(userId, accountData, phone, status, registrationDate);
+        User user = Create(userId, accountData.OnSuccess, phone, status, registrationDate);
         await users.Add(user, ct);
-        return user;
+        return Success<User, Error>(user);
     }
 
-    public async Task UpdateUserAccountData(
+    public async Task<Result<Unit, Error>> UpdateUserAccountData(
         IUsersRepository repository,
         string? email = null, 
         string? login = null)
     {
         UserAccountData cloned = AccountData.Copy();
+        Func<Result<UserAccountData, Error>> operation = (email, login) switch
+        {
+            (null, null) => () => Success<UserAccountData, Error>(cloned),
+            (not null, not null) => () => cloned.ChangeEmail(email).Continue(r => r.OnSuccess.ChangeLogin(login)),
+            (not null, null) => () => cloned.ChangeEmail(email),
+            (null, not null) => () => cloned.ChangeLogin(login),
+        };
         
-        if (email is not null)
-            cloned = cloned.ChangeEmail(email);
-        if (login is not null)
-            cloned = cloned.ChangeLogin(login);
+        Result<UserAccountData, Error> result = operation();
+        if (result.IsFailure) return Failure<Unit, Error>(result.OnError);
         
         UserRegistrationApproval approval = await repository.CheckRegistrationApproval(
-            cloned.Email, 
-            cloned.Login, 
+            result.OnSuccess.Email, 
+            result.OnSuccess.Login, 
             PhoneNumber.Phone);
-        
-        if (!approval.HasUniqueEmail)
-            throw new InvalidOperationException("Почта пользователя не уникальна");
-        if (!approval.HasUniqueLogin)
-            throw new InvalidOperationException("Логин пользователя не уникален");
-        
-        AccountData = cloned;
+
+        (bool uniqueLogin, bool uniqueEmail) = (approval.HasUniqueLogin, approval.HasUniqueEmail);
+        Func<Result<Unit, Error>> update = (uniqueLogin, uniqueEmail) switch
+        {
+            (true, true) => () => Success<Unit, Error>(Unit.Value),
+            (false, true) => () => Failure<Unit, Error>(Error.Conflict("Почта пользователя не уникальна")),
+            (true, false) => () => Failure<Unit, Error>(Error.Conflict("Логин пользователя не уникален")),
+            _ => throw new UnreachableException(),
+        };
+        return update();
     }
     
     private static User Create(
@@ -133,16 +147,18 @@ public sealed class User
         };
     }
     
-    private static void CheckRegistrationApproved(UserRegistrationApproval approval)
+    private static Result<Unit, Error> CheckRegistrationApproved(UserRegistrationApproval approval)
     {
-        List<string> errors = [];
-        if (!approval.HasUniqueLogin)
-            errors.Add("Логин пользователя не уникален");
-        if (!approval.HasUniqueEmail)
-            errors.Add("Почта пользователя не уникальна");
-        if (!approval.HasUniquePhone)
-            errors.Add("Номер телефона пользователя не уникален");
-        if (errors.Count > 0)
-            throw new InvalidOperationException(string.Join(", ", errors));
+        (bool uniqueLogin, bool uniqueEmail, bool uniquePhone) = (approval.HasUniqueLogin, approval.HasUniqueEmail, approval.HasUniquePhone);
+        Func<Result<Unit, Error>> operation = (uniqueLogin, uniqueEmail, uniquePhone) switch
+        {
+            (true, true, true) => () => Success<Unit, Error>(Unit.Value),
+            (false, true, true) => () => Failure<Unit, Error>(Error.Conflict("Почта пользователя не уникальна")),
+            (true, false, true) => () => Failure<Unit, Error>(Error.Conflict("Логин пользователя не уникален")),
+            (true, true, false) => () => Failure<Unit, Error>(Error.Conflict("Номер телефона пользователя не уникален")),
+            _ => () => Failure<Unit, Error>(Error.Conflict("Логин, почта или номер телефона пользователя не уникальны")),
+        };
+        
+        return operation();
     }
 }

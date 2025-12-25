@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Net;
+using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Domain.ProjectContext;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
+using ProjectManagement.Domain.Utilities;
 using ProjectManagement.Presenters.Controllers.ProjectsContext.Requests;
 using ProjectManagement.UseCases.Projects.AddProjectMembers;
 using ProjectManagement.UseCases.Projects.AddProjectTasks;
@@ -41,8 +43,8 @@ public class ProjectsController
             ProjectName: request.Name, 
             ProjectDescription: request.Description);
         
-        Project project = await handler.Handle(command, ct);
-        return new Envelope(project.ToDto());        
+        Result<Project, Error> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, p => p.ToDto());
     }
     
     /// <summary>
@@ -69,8 +71,8 @@ public class ProjectsController
             Tasks: request.Tasks.Select(t => new AddProjectTaskDto(t.MembersLimit, t.Title, t.Description, t.CloseDate))
             );
         
-        IEnumerable<ProjectTask> tasks = await handler.Handle(command, ct);
-        return new Envelope(tasks.Select(t => t.ToDto()));
+        Result<IEnumerable<ProjectTask>, Error> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, tasks => tasks.Select(t => t.ToDto()));
     }
     
     /// <summary>
@@ -97,8 +99,8 @@ public class ProjectsController
             MemberIds: request.Members.Select(m => m.Id)
         );
 
-        IEnumerable<ProjectMember> members = await handler.Handle(command, ct);
-        return new Envelope(members.Select(m => m.ToDto()));
+        Result<IEnumerable<ProjectMember>, Error> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, members => members.Select(m => m.ToDto()));
     }
     
     /// <summary>
@@ -127,9 +129,9 @@ public class ProjectsController
             TaskId: taskId,
             MemberId: request.MemberId
             );
-        
-        ProjectTaskAssignment assignment = await handler.Handle(command, ct);
-        return new Envelope(assignment.ToDto());
+
+        Result<ProjectTaskAssignment, Error> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, assignment => assignment.ToDto());
     }
     
     /// <summary>
@@ -156,8 +158,8 @@ public class ProjectsController
             TaskId: taskId
             );
         
-        ProjectTask task = await handler.Handle(command, ct);
-        return new Envelope(task.ToDto());
+        Result<ProjectTask, Error> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, task => task.ToDto());
     }
     
     /// <summary>
@@ -187,7 +189,7 @@ public class ProjectsController
             NewDescription: description
             );
         
-        Project project = await handler.Handle(command, ct);
-        return new Envelope(project.ToDto());
+        Result<Project, Error> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, project => project.ToDto());
     }
 }

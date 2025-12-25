@@ -1,4 +1,6 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
 
 /// <summary>
 /// Логин участника проекта
@@ -21,21 +23,18 @@ public sealed record ProjectMemberLogin
 
     public string Value { get; }
 
-    public static ProjectMemberLogin Create(string value)
+    public static Result<ProjectMemberLogin, Error> Create(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Логин участника проекта был пустым.");
-
-        if (value.Length > MAX_PROJECT_MEMBER_LOGIN_LENGTH)
-            throw new ArgumentException(
-                $"Длина логина участника проекта более {MAX_PROJECT_MEMBER_LOGIN_LENGTH} символов."
-            );
-
-        if (value.Length < MIN_PROJECT_MEMBER_LOG_LENGTH)
-            throw new ArgumentException(
-                $"Длина участника проекта менее {MIN_PROJECT_MEMBER_LOG_LENGTH} символов."
-            );
-
-        return new ProjectMemberLogin(value);
+        Func<Result<ProjectMemberLogin, Error>> operation = value switch
+        {
+            { } v when string.IsNullOrWhiteSpace(v) => () =>
+                Failure<ProjectMemberLogin, Error>(Error.InvalidFormat("Логин участника проекта был пустым.")),
+            { } v when v.Length > MAX_PROJECT_MEMBER_LOGIN_LENGTH => () =>
+                Failure<ProjectMemberLogin, Error>(Error.InvalidFormat($"Длина логина участника проекта более {MAX_PROJECT_MEMBER_LOGIN_LENGTH} символов.")),
+            { } v when v.Length < MIN_PROJECT_MEMBER_LOG_LENGTH => () =>
+                Failure<ProjectMemberLogin, Error>(Error.InvalidFormat($"Длина логина участника проекта менее {MIN_PROJECT_MEMBER_LOG_LENGTH} символов.")),
+            { } v => () => Success<ProjectMemberLogin, Error>(new ProjectMemberLogin(v)),
+        };
+        return operation();
     }
 }

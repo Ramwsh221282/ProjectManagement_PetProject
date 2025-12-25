@@ -21,20 +21,20 @@ public sealed class ProjectTaskEntityConfiguration : IEntityTypeConfiguration<Pr
         builder
             .Property(x => x.Id)
             .HasColumnName("id")
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectTaskId.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectTaskId.Create(fromDb).OnSuccess);
 
         // конфигурируем внешний ключ к проекту
         builder
             .Property(x => x.ProjectId)
             .HasColumnName("project_id")
             .IsRequired()
-            .HasConversion(toDb => toDb!.Value.Value, fromDb => ProjectId.Create(fromDb));
+            .HasConversion(toDb => toDb!.Value.Value, fromDb => ProjectId.Create(fromDb).OnSuccess);
 
         // конфигурируем лимит участников задач
         builder
             .Property(x => x.Limit)
             .HasColumnName("members_limit")
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectTaskMembersLimit.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectTaskMembersLimit.Create(fromDb).OnSuccess);
 
         // конфигурируем сложный объект, который состоит из других сложных объектов
         builder.ComplexProperty(

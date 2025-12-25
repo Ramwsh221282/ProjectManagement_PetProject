@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProjectManagement.Domain.ProjectContext;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectOwnershipping;
 using ProjectManagement.Domain.ProjectContext.ValueObjects;
 using ProjectManagement.Infrastructure.Extensions;
@@ -22,7 +21,7 @@ public sealed class ProjectEntityConfiguration : IEntityTypeConfiguration<Projec
         builder
             .Property(x => x.Id)
             .HasColumnName("id")
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectId.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectId.Create(fromDb).OnSuccess);
 
         // конфигурируем работу со свойствами
         // где свойства - кастомный класс из 1 поля
@@ -31,7 +30,7 @@ public sealed class ProjectEntityConfiguration : IEntityTypeConfiguration<Projec
             .HasColumnName("name")
             .IsRequired()
             .HasMaxLength(ProjectName.MAX_PROJECT_NAME_LENGTH)
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectName.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectName.Create(fromDb).OnSuccess);
 
         builder.HasIndex(x => x.Name).IsUnique();
 
@@ -40,7 +39,7 @@ public sealed class ProjectEntityConfiguration : IEntityTypeConfiguration<Projec
             .HasColumnName("description")
             .IsRequired()
             .HasMaxLength(ProjectDescription.MAX_PROJECT_DESCRIPTION_LENGTH)
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectDescription.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectDescription.Create(fromDb).OnSuccess);
 
         // конфигурируем работу со свойствами
         // где свойства - сложный объект из нескольких полей

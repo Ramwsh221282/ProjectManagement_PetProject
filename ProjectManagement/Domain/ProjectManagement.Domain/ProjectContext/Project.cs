@@ -5,6 +5,7 @@ using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
 using ProjectManagement.Domain.ProjectContext.ValueObjects;
 using ProjectManagement.Domain.UserContext;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.Domain.ProjectContext;
 
@@ -65,34 +66,62 @@ public sealed class Project
     /// </summary>
     /// <param name="name">Новое название проекта</param>
     /// <param name="description">Новое описание проекта</param>
-    public void Update(string? name = null, string? description = null)
+    public Result<Unit, Error> Update(string? name = null, string? description = null)
     {
-        if (name is not null)
+        Func<Result<Unit, Error>> operation = (name, description) switch
         {
-            ProjectName nextName = ProjectName.Create(name);
-            Name = nextName;
-        }
-
-        if (description is not null)
-        {
-            ProjectDescription nextDescription = ProjectDescription.Create(description);
-            Description = nextDescription;
-        }
+            (null, null) => () => Success<Unit, Error>(Unit.Value),
+            (var nextName, null) => () =>
+            {
+                Result<ProjectName, Error> nameRes = ProjectName.Create(nextName);
+                if (nameRes.IsFailure) return Failure<Unit>(nameRes.OnError);
+                Name = nameRes.OnSuccess;
+                return Success<Unit, Error>(Unit.Value);
+            },
+            (null, var nextDescription) => () =>
+            {
+                Result<ProjectDescription, Error> descriptionRes = ProjectDescription.Create(nextDescription);
+                if (descriptionRes.IsFailure) return Failure<Unit>(descriptionRes.OnError);
+                Description = descriptionRes.OnSuccess;
+                return Success<Unit, Error>(Unit.Value);
+            },
+            (var nextName, var nextDescription) => () =>
+            {
+                Result<ProjectName, Error> nameRes = ProjectName.Create(nextName);
+                if (nameRes.IsFailure) return Failure<Unit>(nameRes.OnError);
+                Name = nameRes.OnSuccess;
+                
+                Result<ProjectDescription, Error> descriptionRes = ProjectDescription.Create(nextDescription);
+                if (descriptionRes.IsFailure) return Failure<Unit>(descriptionRes.OnError);
+                Description = descriptionRes.OnSuccess;
+                
+                return Success<Unit, Error>(Unit.Value);                
+            },
+        };
+        
+        return operation();
     }
     
     /// <summary>
     /// Добавление задачи в проект
     /// </summary>
     /// <param name="task">Задача</param>
-    /// <exception cref="InvalidOperationException">Задача уже существует или уже закрыта.</exception>
-    public void AddTask(ProjectTask task)
+    public Result<Unit, Error> AddTask(ProjectTask task)
     {
-        if (IsFinished()) throw new InvalidOperationException("Проект уже закрыт.");
-        if (task.AlreadyExistsIn(_tasks)) throw new InvalidOperationException("Задача уже существует.");
-        if (task.IsClosed()) throw new InvalidOperationException("Нельзя добавить закрытую задачу в проект.");
-        
-        task.SignInProject(this);
-        _tasks.Add(task);
+        (bool finished, bool exists, bool closed) = (IsFinished(), task.AlreadyExistsIn(_tasks), task.IsClosed());
+        Func<Result<Unit, Error>> operation = (finished, exists, closed) switch
+        {
+            (true, _, _) => () => Failure<Unit>(Error.Conflict("Проект уже закрыт.")),
+            (_, true, _) => () => Failure<Unit>(Error.Conflict("Задача уже существует.")),
+            (_, _, true) => () => Failure<Unit>(Error.Conflict("Нельзя добавить закрытую задачу в проект.")),
+            _ => () =>
+            {
+                task.SignInProject(this);
+                _tasks.Add(task);
+                return Success<Unit, Error>(Unit.Value);
+            },
+        };
+        return operation();
     }
     
     /// <summary>
@@ -110,15 +139,22 @@ public sealed class Project
     /// <param name="task">Задача</param>
     /// <param name="member">Участник</param>
     /// <returns>Назначение участника на задачу</returns>
-    /// <exception cref="InvalidOperationException">Проект или задача уже закрыты.</exception>
-    public ProjectTaskAssignment FormAssignment(ProjectTask task, ProjectMember member)
+    public Result<ProjectTaskAssignment, Error> FormAssignment(ProjectTask task, ProjectMember member)
     {
-        if (IsFinished()) throw new InvalidOperationException("Проект уже закрыт.");
-        if (task.IsClosed()) throw new InvalidOperationException("Задача уже закрыта.");
-        ProjectTaskAssignment assignment = ProjectTaskAssignment.FormAssignmentByCurrentDate(task, member);
-        task.AddAssignment(assignment);
-        member.AssignTo(assignment);
-        return assignment;
+        (bool isFinished, bool taskClosed) = (IsFinished(), task.IsClosed());
+        Func<Result<ProjectTaskAssignment, Error>> operation = (isFinished, taskClosed) switch
+        {
+            (true, _) => () => Failure<ProjectTaskAssignment, Error>(Error.Conflict("Проект уже закрыт.")),
+            (_, true) => () => Failure<ProjectTaskAssignment, Error>(Error.Conflict("Задача уже закрыта.")),
+            _ => () =>
+            {
+                ProjectTaskAssignment assignment = ProjectTaskAssignment.FormAssignmentByCurrentDate(task, member);
+                task.AddAssignment(assignment);
+                member.AssignTo(assignment);
+                return Success<ProjectTaskAssignment, Error>(assignment);
+            },
+        };
+        return operation();
     }
     
     /// <summary>
@@ -126,11 +162,12 @@ public sealed class Project
     /// </summary>
     /// <param name="id">Идентификатор задачи</param>
     /// <returns>Найденная задача</returns>
-    /// <exception cref="InvalidOperationException">Задача не найдена.</exception>
-    public ProjectTask FindTask(Guid id)
+    public Result<ProjectTask, Nothing> FindTask(Guid id)
     {
         ProjectTask? task = _tasks.FirstOrDefault(t => t.Id.Value == id);
-        return task ?? throw new InvalidOperationException("Задача не найдена.");
+        return task is null 
+            ? Failure<ProjectTask, Nothing>(new Nothing()) 
+            : Success<ProjectTask, Nothing>(task);
     }
     
     /// <summary>
@@ -138,25 +175,32 @@ public sealed class Project
     /// </summary>
     /// <param name="id">Идентификатор участника</param>
     /// <returns>Найденный участник</returns>
-    /// <exception cref="InvalidOperationException">Участник не найден.</exception>
-    public ProjectMember FindMember(Guid id)
+    public Result<ProjectMember, Nothing> FindMember(Guid id)
     {
         ProjectMember? member = _members.FirstOrDefault(m => m.MemberId.Value == id);
-        return member ?? throw new InvalidOperationException("Участник не найден.");
+        return member is null 
+            ? Failure<ProjectMember, Nothing>(new Nothing()) 
+            : Success<ProjectMember, Nothing>(member);
     }
     
     /// <summary>
     /// Закрытие задачи в проекте
     /// </summary>
     /// <param name="task">Задача</param>
-    /// <exception cref="InvalidOperationException">Задача не принадлежит проекту или уже закрыта.</exception>
-    public void CloseTask(ProjectTask task)
+    public Result<Unit, Error> CloseTask(ProjectTask task)
     {
-        if (!task.BelongsTo(this)) throw new InvalidOperationException("Задача не принадлежит проекту.");
-        
-        if (task.IsClosed()) throw new InvalidOperationException("Задача уже закрыта.");
-        
-        task.Close();
+        (bool belongs, bool closed) = (task.BelongsTo(this), task.IsClosed());
+        Func<Result<Unit, Error>> operation = (belongs, closed) switch
+        {
+            (false, _) => () => Failure<Unit>(Error.Conflict("Задача не принадлежит проекту.")),
+            (_, true) => () => Failure<Unit>(Error.Conflict("Задача уже закрыта.")),
+            _ => () =>
+            {
+                task.Close();
+                return Success<Unit, Error>(Unit.Value);
+            },
+        };
+        return operation();
     }
     
     /// <summary>
@@ -172,36 +216,56 @@ public sealed class Project
     /// <summary>
     /// Закрытие проекта
     /// </summary>
-    /// <exception cref="InvalidOperationException">Проект уже закрыт.</exception>
-    public void Close()
+    public Result<Unit, Error> Close()
     {
-        if (IsFinished()) throw new InvalidOperationException("Проект уже закрыт.");
-        
-        ProjectLifeTime life = LifeTime.Closed(DateTime.UtcNow);
-        
-        LifeTime = life;
+        Func<Result<Unit, Error>> operation = IsFinished() switch
+        {
+            true => () => Failure<Unit>(Error.Conflict("Проект уже закрыт.")),
+            _ => () =>
+            {
+                ProjectLifeTime life = LifeTime.Closed(DateTime.UtcNow);
+                LifeTime = life;
+                return Success<Unit, Error>(Unit.Value);
+            },
+        };
+        return operation();
     }
     
     /// <summary>
     /// Добавление участника в проект
     /// </summary>
     /// <param name="member">Участник проекта</param>
-    /// <exception cref="InvalidOperationException">Участник уже существует.</exception>
-    public void AddMember(ProjectMember member)
+    public Result<Unit, Error> AddMember(ProjectMember member)
     {
-        if (member.ExistsIn(_members)) throw new InvalidOperationException("Участник уже существует.");
-        member.JoinTo(this);
-        _members.Add(member);
+        Func<Result<Unit, Error>> operation = () =>
+        {
+            if (member.ExistsIn(_members)) return Failure<Unit>(Error.Conflict("Участник уже существует."));
+            member.JoinTo(this);
+            _members.Add(member);
+            return Success<Unit, Error>(Unit.Value);
+        };
+        return operation();
     }
     
     /// <summary>
     /// Добавление нескольких участников в проект
     /// </summary>
     /// <param name="members">Список участников</param>
-    public void AddMembers(IEnumerable<ProjectMember> members)
+    public Result<Unit, Error> AddMembers(IEnumerable<ProjectMember> members)
     {
-        foreach (ProjectMember member in members)
-            AddMember(member);
+        Func<Result<Unit, Error>> operation = () =>
+        {
+            foreach (ProjectMember member in members)
+            {
+                if (member.ExistsIn(_members)) 
+                    return Failure<Unit>(Error.Conflict("Участник уже существует."));
+                
+                member.JoinTo(this);
+                _members.Add(member);
+            }
+            return Success<Unit, Error>(Unit.Value);
+        };
+        return operation();
     }
     
     /// <summary>
@@ -212,35 +276,40 @@ public sealed class Project
     /// <param name="user">Пользователь, создающий проект</param>
     /// <param name="approval">Результат проверки уникальности названия проекта</param>
     /// <returns>Созданный проект</returns>
-    /// <exception cref="InvalidOperationException">Проект с таким названием уже существует.</exception>
-    public static Project CreateNew(
+    public static Result<Project, Error> CreateNew(
         ProjectName name, 
         ProjectDescription description, 
         User user, 
         ProjectRegistrationApproval approval)
     {
-        if (!approval.HasUniqueName)
-            throw new InvalidOperationException("Проект с таким названием уже существует.");
-        
-        ProjectId projectId = ProjectId.Create(Guid.NewGuid());
-        ProjectMemberId ownerId = ProjectMemberId.Create(user.UserId.Value);
-        ProjectMemberLogin ownerLogin = ProjectMemberLogin.Create(user.AccountData.Login);
-        
-        ProjectMember owner = ProjectMember.CreateOwner(ownerId, ownerLogin);
-        ProjectOwnership ownership = new ProjectOwnership(projectId, user);
-        
-        Project project = new Project()
+        Func<Result<Project, Error>> operation = approval.HasUniqueName switch
         {
-            Id = projectId,
-            Name = name,
-            Description = description,
-            Ownership = ownership,
-            LifeTime = ProjectLifeTime.Create(DateTime.UtcNow, null),
-            _members = [],
-            _tasks = [],
+            false => () => Failure<Project, Error>(Error.Conflict("Проект с таким названием уже существует.")),
+            _ => () =>
+            {
+                ProjectId projectId = new();
+                ProjectMemberId ownerId = ProjectMemberId.Create(user.UserId.Value).OnSuccess;
+                ProjectMemberLogin ownerLogin = ProjectMemberLogin.Create(user.AccountData.Login).OnSuccess;
+                ProjectMember owner = ProjectMember.CreateOwner(ownerId, ownerLogin);
+                ProjectOwnership ownership = new ProjectOwnership(projectId, user);
+                ProjectLifeTime lifeTime = ProjectLifeTime.Create(DateTime.UtcNow, null).OnSuccess;
+                
+                Project project = new Project()
+                {
+                    Id = projectId,
+                    Name = name,
+                    Description = description,
+                    Ownership = ownership,
+                    LifeTime = lifeTime,
+                    _members = [],
+                    _tasks = [],
+                };
+                
+                project.AddMember(owner);
+                return Success<Project, Error>(project);
+            },
         };
         
-        project.AddMember(owner);
-        return project;
+        return operation();
     }
 }

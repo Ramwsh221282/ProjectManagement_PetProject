@@ -10,6 +10,13 @@ public sealed class DatabaseOptions
 
     public string FormConnectionString()
     {
+        if (string.IsNullOrEmpty(Host) || 
+            string.IsNullOrEmpty(Port) || 
+            string.IsNullOrEmpty(Password) || 
+            string.IsNullOrEmpty(Database) || 
+            string.IsNullOrEmpty(User))
+            throw new InvalidOperationException("Не все параметры подключения к БД указаны.");
+        
         return $"Host={Host};Port={Port};Username={User};Password={Password};Database={Database}";
     }
 }

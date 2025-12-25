@@ -1,6 +1,8 @@
-﻿namespace ProjectManagement.Domain.Contracts;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.Contracts;
 
 public interface IUnitOfWork
 {
-    Task SaveChangesAsync(CancellationToken ct = default);
+    Task<Result<Unit, Error>> SaveChangesAsync(CancellationToken ct = default);
 }

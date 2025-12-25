@@ -15,9 +15,9 @@ public sealed class ProjectOwnershipConfiguration : IEntityTypeConfiguration<Pro
         
         builder.Property(x => x.ProjectId)
             .HasColumnName("project_id")
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectId.Create(fromDb));        
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectId.Create(fromDb).OnSuccess);        
         
         builder.Property(x => x.OwnerId).HasColumnName("owner_id")
-            .HasConversion(toDb => toDb.Id, fromDb => ProjectOwnerId.Create(fromDb));
+            .HasConversion(toDb => toDb.Id, fromDb => ProjectOwnerId.Create(fromDb).OnSuccess);
     }
 }

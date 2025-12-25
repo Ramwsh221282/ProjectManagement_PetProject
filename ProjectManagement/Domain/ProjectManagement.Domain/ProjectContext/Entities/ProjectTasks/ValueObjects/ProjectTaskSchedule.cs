@@ -1,4 +1,6 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
 
 /// <summary>
 /// Расписание сроков задачи
@@ -23,20 +25,23 @@ public readonly record struct ProjectTaskSchedule
         Closed = closed;
     }
 
-    public static ProjectTaskSchedule Create(DateTime created, DateTime? closed)
+    public static Result<ProjectTaskSchedule, Error> Create(DateTime created, DateTime? closed)
     {
-        if (created == DateTime.MaxValue)
-            throw new ArgumentException("Дата начала задачи некорректна.");
-
-        if (created == DateTime.MinValue)
-            throw new ArgumentException("Дата конца задачи некорректна.");
-
-        if (closed == null)
-            return new ProjectTaskSchedule(created, closed);
-
-        if (closed < created)
-            throw new ArgumentException("Дата окончания задачи менее даты начала задачи.");
-
-        return new ProjectTaskSchedule(created, closed);
+        Func<Result<ProjectTaskSchedule, Error>> operation = (created, closed) switch
+        {
+            { created: var c, closed: null } when c == DateTime.MaxValue => ()
+                => Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата начала задачи некорректна.")),
+            { created: var c, closed: null } when c == DateTime.MinValue => ()
+                => Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата конца задачи некорректна.")),
+            { created: var c, closed: var cl } when cl == DateTime.MaxValue => ()
+                => Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата начала задачи некорректна.")),
+            { created: var c, closed: var cl } when cl == DateTime.MinValue => ()
+                => Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата конца задачи некорректна.")),
+            { created: var c, closed: var cl } when cl < c => () => 
+                Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата окончания задачи менее даты начала задачи.")),
+            { created: var c, closed: var cl } => () => Success<ProjectTaskSchedule, Error>(new ProjectTaskSchedule(c, cl)),
+        };
+        
+        return operation();
     }
 }

@@ -1,30 +1,25 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using ProjectManagement.Domain.Contracts;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.Infrastructure.Common;
 
 public sealed class TransactionScope(IDbContextTransaction transaction) : ITransactionScope
 {
-    public void Dispose()
-    {
-        transaction.Dispose();
-    }
+    public void Dispose() => transaction.Dispose();
+    public ValueTask DisposeAsync() => transaction.DisposeAsync();
 
-    public ValueTask DisposeAsync()
-    {
-        return transaction.DisposeAsync();
-    }
-
-    public async Task CommitAsync(CancellationToken ct = default)
+    public async Task<Result<Unit, Error>> CommitAsync(CancellationToken ct = default)
     {
         try
         {
             await transaction.CommitAsync(ct);
+            return Success<Unit, Error>(Unit.Value);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             await transaction.RollbackAsync(ct);
-            throw;
+            return Failure<Unit, Error>(Error.InternalError("Ошибка транзакции"));
         }
     }
 }

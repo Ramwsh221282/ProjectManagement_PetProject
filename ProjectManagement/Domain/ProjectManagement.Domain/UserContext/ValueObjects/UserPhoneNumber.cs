@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.Domain.UserContext.ValueObjects;
 
@@ -30,18 +32,17 @@ public sealed record UserPhoneNumber
     /// </summary>
     public string Phone { get; }
 
-    public static UserPhoneNumber Create(string phone)
+    public static Result<UserPhoneNumber, Error> Create(string phone)
     {
-        if (string.IsNullOrWhiteSpace(phone))
-            throw new ArgumentException("Номер телефона был пустым.");
-
-        if (phone.Length > MAX_PHONE_NUMBER_LENGTH)
-            throw new ArgumentException("Номер телефона некорректного формата.");
-        
-        if (!IsPhoneNumberMatchesTemplate(_phoneValidationTemplates, phone))
-            throw new ArgumentException("Номер телефона некорректного формата.");
-
-        return new UserPhoneNumber(phone);
+        ErrorResult<UserPhoneNumber> result = phone switch
+        {
+            { } when string.IsNullOrWhiteSpace(phone) => Error.Validation("Номер телефона был пустым."),
+            { } when phone.Length > MAX_PHONE_NUMBER_LENGTH => Error.Validation($"Номер телефона превышает длину {MAX_PHONE_NUMBER_LENGTH} символов."),
+            { } when !IsPhoneNumberMatchesTemplate(_phoneValidationTemplates, phone) => Error.InvalidFormat("Номер телефона некорректного формата."),
+            { } => new UserPhoneNumber(phone),
+            _ => throw new UnreachableException()
+        };
+        return result;
     }
 
     private static bool IsPhoneNumberMatchesTemplate(IEnumerable<Regex> templates, string input)

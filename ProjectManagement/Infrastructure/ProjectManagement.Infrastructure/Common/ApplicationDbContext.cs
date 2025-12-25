@@ -20,12 +20,8 @@ public sealed class ApplicationDbContext(IOptions<DatabaseOptions> options) : Db
         optionsBuilder.LogTo(Console.WriteLine);
     }
     
-    /// <summary>
-    /// применение конфигураций моделей для базы данных
-    /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // собираем все конфигурации (то, что наследует IEntityTypeConfiguration<T>) и используем.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 }

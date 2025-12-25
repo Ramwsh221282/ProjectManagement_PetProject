@@ -1,4 +1,6 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
 
 /// <summary>
 /// Идентификатор участника проекта
@@ -11,8 +13,10 @@ public readonly record struct ProjectMemberId
 
     public Guid Value { get; }
 
-    public static ProjectMemberId Create(Guid value) =>
-        value == Guid.Empty
-            ? throw new ArgumentException("Идентификатор участника проекта некорректный.")
-            : new ProjectMemberId(value);
+    public static Result<ProjectMemberId, Error> Create(Guid value)
+    {
+        if (value == Guid.Empty)
+            return Failure<ProjectMemberId, Error>(Error.InvalidFormat("Идентификатор участника проекта некорректный."));
+        return Success<ProjectMemberId, Error>(new ProjectMemberId(value));
+    }
 }

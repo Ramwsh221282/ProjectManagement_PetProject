@@ -22,7 +22,7 @@ public sealed class ProjectTaskAssignmentEntityConfiguration
         
         builder.Property(x => x.Id)
             .HasColumnName("id")
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectTaskAssignmentId.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectTaskAssignmentId.Create(fromDb).OnSuccess);
 
         // конфигурирование даты назначения
         builder
@@ -31,19 +31,19 @@ public sealed class ProjectTaskAssignmentEntityConfiguration
             .IsRequired()
             .HasConversion(
                 toDb => toDb.AssignedAt,
-                fromDb => ProjectTaskAssignmentDate.Create(fromDb)
+                fromDb => ProjectTaskAssignmentDate.Create(fromDb).OnSuccess
             );
 
         // конфигурирование ид задачи
         builder
             .Property(x => x.TaskId)
             .HasColumnName("task_id")
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectTaskId.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectTaskId.Create(fromDb).OnSuccess);
 
         // конфигурирование ид участника
         builder
             .Property(x => x.MemberId)
             .HasColumnName("member_id")
-            .HasConversion(toDb => toDb.Value, fromDb => ProjectMemberId.Create(fromDb));
+            .HasConversion(toDb => toDb.Value, fromDb => ProjectMemberId.Create(fromDb).OnSuccess);
     }
 }
