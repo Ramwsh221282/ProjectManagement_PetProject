@@ -7,19 +7,20 @@ namespace ProjectManagement.Infrastructure.Common;
 public sealed class TransactionScope(IDbContextTransaction transaction) : ITransactionScope
 {
     public void Dispose() => transaction.Dispose();
+
     public ValueTask DisposeAsync() => transaction.DisposeAsync();
 
-    public async Task<Result<Unit, Error>> CommitAsync(CancellationToken ct = default)
+    public async Task<Result<Unit>> CommitAsync(CancellationToken ct = default)
     {
         try
         {
             await transaction.CommitAsync(ct);
-            return Success<Unit, Error>(Unit.Value);
+            return Unit.Value;
         }
         catch (Exception)
         {
             await transaction.RollbackAsync(ct);
-            return Failure<Unit, Error>(Error.InternalError("Ошибка транзакции"));
+            return Error.InternalError("Ошибка транзакции");
         }
     }
 }

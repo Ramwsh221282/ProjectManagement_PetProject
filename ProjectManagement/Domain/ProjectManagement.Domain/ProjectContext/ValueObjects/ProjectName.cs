@@ -23,17 +23,23 @@ public sealed record ProjectName
         Value = value;
     }
 
-    private ProjectName() { } // ef core
-
-    public static Result<ProjectName, Error> Create(string value)
+    private ProjectName()
     {
-        ErrorResult<ProjectName> result = value switch
+        Value = null!;
+    } // ef core
+
+    public static Result<ProjectName> Create(string value)
+    {
+        return value switch
         {
-            { } when string.IsNullOrWhiteSpace(value) => Error.Validation("Название проекта было пустым."),
-            { } when value.Length > MAX_PROJECT_NAME_LENGTH => Error.Validation($"Длина проекта превышает максимальную длину в {MAX_PROJECT_NAME_LENGTH} символов."),
+            { } when string.IsNullOrWhiteSpace(value) => Error.Validation(
+                "Название проекта было пустым."
+            ),
+            { } when value.Length > MAX_PROJECT_NAME_LENGTH => Error.Validation(
+                $"Длина проекта превышает максимальную длину в {MAX_PROJECT_NAME_LENGTH} символов."
+            ),
             { } => new ProjectName(value),
-            _ => throw new UnreachableException()
+            _ => throw new UnreachableException(),
         };
-        return result;
     }
 }

@@ -19,8 +19,8 @@ public readonly record struct ProjectTaskId
         Value = value;
     }
 
-    public static Result<ProjectTaskId, Error> Create(Guid value) =>
+    public static Result<ProjectTaskId> Create(Guid value) =>
         value == Guid.Empty
-            ? Failure<ProjectTaskId, Error>(Error.InvalidFormat("Некорректный идентификатор задачи проекта."))
-            : Success<ProjectTaskId, Error>(new ProjectTaskId(value));
+            ? Error.InvalidFormat("Некорректный идентификатор задачи проекта.")
+            : new ProjectTaskId(value);
 }

@@ -1,8 +1,8 @@
-﻿using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
+﻿using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects.Enumerations;
 using ProjectManagement.Domain.ProjectContext.ValueObjects;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
 
@@ -11,14 +11,20 @@ namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
 /// </summary>
 public sealed class ProjectTask
 {
-    private ProjectTask() { } // ef core
+    private ProjectTask()
+    {
+        Id = default!;
+        Limit = default!;
+        StatusInfo = default!;
+        Information = default!;
+    } // ef core
 
     /// <summary>
     /// Проект
     /// </summary>
     public Project? Project { get; private set; }
 
-    /// <summary>   
+    /// <summary>
     /// Идентификатор проекта
     /// </summary>
     public ProjectId? ProjectId { get; private set; }
@@ -61,7 +67,7 @@ public sealed class ProjectTask
         IEnumerable<ProjectTaskAssignment>? assignments
     )
     {
-        _assignments = assignments == null ? [] : [..assignments];
+        _assignments = assignments == null ? [] : [.. assignments];
         Id = id;
         Limit = limit;
         Information = information;
@@ -73,15 +79,17 @@ public sealed class ProjectTask
         Project = project;
         ProjectId = project.Id;
     }
-    
-    public void Close()
+
+    public Result<Unit> Close()
     {
-        ProjectTaskStatusInfo status = new ProjectTaskStatusInfo(
-            new ProjectTaskStatusClosed(),
-            StatusInfo.Schedule);
+        if (IsClosed())
+            return Error.Conflict("Задача уже закрыта.");
+
+        ProjectTaskStatusInfo status = new(new ProjectTaskStatusClosed(), StatusInfo.Schedule);
         StatusInfo = status;
+        return Unit.Value;
     }
-    
+
     public void AddAssignment(ProjectTaskAssignment assignment)
     {
         _assignments.Add(assignment);
@@ -89,10 +97,11 @@ public sealed class ProjectTask
 
     public bool BelongsTo(Project project)
     {
-        if (ProjectId == null) return false;
+        if (ProjectId == null)
+            return false;
         return ProjectId.Value == project.Id;
     }
-    
+
     public bool EqualsByTitle(ProjectTask other)
     {
         return Information.Title == other.Information.Title;
@@ -102,7 +111,7 @@ public sealed class ProjectTask
     {
         return Id == other.Id;
     }
-    
+
     public bool IsClosed()
     {
         return StatusInfo.Status.Value == new ProjectTaskStatusClosed().Value;
@@ -117,7 +126,7 @@ public sealed class ProjectTask
         ProjectTaskMembersLimit membersLimit,
         ProjectTaskInfo information,
         ProjectTaskSchedule schedule
-        )
+    )
     {
         var id = new ProjectTaskId();
         var status = new ProjectTaskStatusOpened();

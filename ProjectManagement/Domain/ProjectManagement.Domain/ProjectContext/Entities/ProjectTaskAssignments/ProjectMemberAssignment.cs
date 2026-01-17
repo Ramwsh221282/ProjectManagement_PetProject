@@ -11,13 +11,21 @@ namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignment
 /// </summary>
 public sealed class ProjectTaskAssignment
 {
-    private ProjectTaskAssignment() { } // ef core
+    private ProjectTaskAssignment()
+    {
+        Id = default!;
+        Task = default!;
+        TaskId = default!;
+        Member = default!;
+        MemberId = default!;
+        AssignmentDate = default!;
+    } // ef core
 
     /// <summary>
     /// Ид назначения участника в задачу
     /// </summary>
     public ProjectTaskAssignmentId Id { get; private set; }
-    
+
     /// <summary>
     /// Задача
     /// </summary>
@@ -45,9 +53,10 @@ public sealed class ProjectTaskAssignment
 
     public ProjectTaskAssignment(
         ProjectTaskAssignmentId id,
-        ProjectTask task, 
-        ProjectMember member, 
-        ProjectTaskAssignmentDate assignmentDate)
+        ProjectTask task,
+        ProjectMember member,
+        ProjectTaskAssignmentDate assignmentDate
+    )
     {
         Id = id;
         Task = task;
@@ -56,14 +65,17 @@ public sealed class ProjectTaskAssignment
         MemberId = member.MemberId;
         AssignmentDate = assignmentDate;
     }
-    
+
     /// <summary>
     /// Создать назначение участника к задаче
     /// </summary>
     /// <param name="task">Задача</param>
     /// <param name="member">Участник</param>
     /// <returns>Назначение участника к задаче</returns>
-    public static ProjectTaskAssignment FormAssignmentByCurrentDate(ProjectTask task, ProjectMember member)
+    public static ProjectTaskAssignment FormAssignmentByCurrentDate(
+        ProjectTask task,
+        ProjectMember member
+    )
     {
         ProjectTaskAssignmentDate date = ProjectTaskAssignmentDate.Current();
         ProjectTaskAssignmentId id = ProjectTaskAssignmentId.New();

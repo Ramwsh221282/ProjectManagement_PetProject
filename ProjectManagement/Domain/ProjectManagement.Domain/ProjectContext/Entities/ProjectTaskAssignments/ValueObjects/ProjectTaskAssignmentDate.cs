@@ -10,48 +10,37 @@ public readonly record struct ProjectTaskAssignmentDate
 {
     public DateTime AssignedAt { get; }
 
-    public ProjectTaskAssignmentDate()
-    {
-        AssignedAt = DateTime.UtcNow;
-    }
+    public ProjectTaskAssignmentDate() => AssignedAt = DateTime.UtcNow;
 
-    private ProjectTaskAssignmentDate(DateTime date)
-    {
-        AssignedAt = date;
-    }
+    private ProjectTaskAssignmentDate(DateTime date) => AssignedAt = date;
 
-    public static Result<ProjectTaskAssignmentDate, Error> Create(DateTime date, ProjectTask task)
-    {
-        Func<Result<ProjectTaskAssignmentDate, Error>> operation = (date, task) switch
+    public static Result<ProjectTaskAssignmentDate> Create(DateTime date, ProjectTask task) =>
+        (date, task) switch
         {
-            { date: var d, task: var t } when d == DateTime.MinValue => () =>
-                Failure<ProjectTaskAssignmentDate, Error>(Error.InvalidFormat("Дата назначения участника в задачу некорректна.")),
-            { date: var d, task: var t } when d == DateTime.MaxValue => () =>
-                Failure<ProjectTaskAssignmentDate, Error>(Error.InvalidFormat("Дата назначения участника в задачу некорректна.")),
-            { date: var d, task: var t } when t.StatusInfo.Schedule.Created < d => () =>
-                Failure<ProjectTaskAssignmentDate, Error>(Error.InvalidFormat("Дата назначения участника в задачу некорректна. Дата начала задачи меньше даты назначения.")),
-            { date: var d, task: var t } => () =>
-                Success<ProjectTaskAssignmentDate, Error>(new ProjectTaskAssignmentDate(d)),
+            { date: var d, task: _ } when d == DateTime.MinValue => Error.InvalidFormat(
+                "Дата назначения участника в задачу некорректна."
+            ),
+            { date: var d, task: _ } when d == DateTime.MaxValue => Error.InvalidFormat(
+                "Дата назначения участника в задачу некорректна."
+            ),
+            { date: var d, task: var t } when t.StatusInfo.Schedule.Created < d =>
+                Error.InvalidFormat(
+                    "Дата назначения участника в задачу некорректна. Дата начала задачи меньше даты назначения."
+                ),
+            { date: var d, task: _ } => new ProjectTaskAssignmentDate(d),
         };
-        
-        return operation();
-    }
 
-    public static ProjectTaskAssignmentDate Current()
-    {
-        return new ProjectTaskAssignmentDate(DateTime.UtcNow);
-    }
-    
-    public static Result<ProjectTaskAssignmentDate, Error> Create(DateTime date)
-    {
-        Func<Result<ProjectTaskAssignmentDate, Error>> operation = date switch
+    public static ProjectTaskAssignmentDate Current() => new(DateTime.UtcNow);
+
+    public static Result<ProjectTaskAssignmentDate> Create(DateTime date) =>
+        date switch
         {
-            { } d when d == DateTime.MinValue => () => 
-                Failure<ProjectTaskAssignmentDate, Error>(Error.InvalidFormat("Дата назначения участника в задачу некорректна.")),
-            { } d when d == DateTime.MaxValue => () => 
-                Failure<ProjectTaskAssignmentDate, Error>(Error.InvalidFormat("Дата назначения участника в задачу некорректна.")),
-            _ => () => Success<ProjectTaskAssignmentDate, Error>(new ProjectTaskAssignmentDate(date)), 
+            { } d when d == DateTime.MinValue => Error.InvalidFormat(
+                "Дата назначения участника в задачу некорректна."
+            ),
+            { } d when d == DateTime.MaxValue => Error.InvalidFormat(
+                "Дата назначения участника в задачу некорректна."
+            ),
+            _ => new ProjectTaskAssignmentDate(date),
         };
-        return operation();
-    }
 }

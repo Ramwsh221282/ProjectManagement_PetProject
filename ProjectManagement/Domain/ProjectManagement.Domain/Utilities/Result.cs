@@ -1,72 +1,50 @@
 ﻿namespace ProjectManagement.Domain.Utilities;
 
-public static class Result
+public class Result
 {
-    public static Result<T, Error> Failure<T>(Error error)
+    public bool IsSuccess { get; }
+    public bool IsFailure => !IsSuccess;
+    public Error OnError { get; }
+
+    protected Result()
     {
-        return Result<T, Error>.Error(error);
-    }
-    
-    public static Result<T, U> Success<T, U>(T onSuccess)
-    {
-        return Result<T, U>.Success(onSuccess);
-    }
-    
-    public static Result<T, U> Failure<T, U>(U onError)
-    {
-        return Result<T, U>.Error(onError);
+        IsSuccess = true;
+        OnError = Error.None();
     }
 
-    public static Result<T, U> Continue<T, U>(this Result<T, U> result, Func<Result<T,U>> next)
+    protected Result(Error error)
     {
-        return result.IsFailure ? result : next();
+        IsSuccess = false;
+        OnError = error;
     }
-    
-    public static Result<T, U> Continue<T, U>(this Result<T, U> result, Func<Result<T, U>, Result<T,U>> next)
-    {
-        return result.IsFailure ? result : next(result);
-    }
-    
-    public static Result<T, U> Map<T, U>(this Result<T, U> result, Func<T, Result<T, U>> next)
-    {
-        return result.IsFailure ? result : next(result.OnSuccess);
-    }
+
+    public static Result Success() => new();
+
+    public static Result Failure(Error error) => new(error);
+
+    public static Result<T> Failure<T>(Error error)
+        where T : notnull => Result<T>.Failure(error);
+
+    public static Result<T> Success<T>(T value)
+        where T : notnull => Result<T>.Success(value);
+
+    public static implicit operator Result(Error error) => Failure(error);
 }
 
-public class Result<T, U>
+public class Result<T> : Result
+    where T : notnull
 {
     /// <summary>
     /// Успех
     /// </summary>
     private readonly T? _onSuccess;
-    
-    /// <summary>
-    /// Ошибка
-    /// </summary>
-    private readonly U? _onError;
-    
+
     /// <summary>
     /// Получение успеха
     /// </summary>
     /// <exception cref="InvalidOperationException">При доступе к успеху, в случае ошибки</exception>
     public T OnSuccess => _onSuccess ?? throw new InvalidOperationException("Result is failure.");
-    
-    /// <summary>
-    /// Получение ошибки
-    /// </summary>
-    /// <exception cref="InvalidOperationException">При доступе к ошибке, в случае успеха</exception>
-    public U OnError => _onError ?? throw new InvalidOperationException("Result is success.");
-    
-    /// <summary>
-    /// Признак успеха
-    /// </summary>
-    public bool IsSuccess { get; }
-    
-    /// <summary>
-    /// Признак ошибки
-    /// </summary>
-    public bool IsFailure => !IsSuccess;
-    
+
     /// <summary>
     /// Успех
     /// </summary>
@@ -74,19 +52,20 @@ public class Result<T, U>
     protected Result(T onSuccess)
     {
         _onSuccess = onSuccess;
-        IsSuccess = true;
     }
-    
+
     /// <summary>
     /// Ошибка
     /// </summary>
     /// <param name="onError">Что отдавать при ошибке</param>
-    protected Result(U onError)
-    {
-        _onError = onError;
-        IsSuccess = false;
-    }
+    protected Result(Error onError)
+        : base(onError) { }
 
-    public static Result<T, U> Success(T value) => new(value);
-    public static Result<T, U> Error(U value) => new(value);
+    public static Result<T> Success(T value) => new(value);
+
+    public static new Result<T> Failure(Error error) => new(error);
+
+    public static implicit operator Result<T>(T value) => Success(value);
+
+    public static implicit operator Result<T>(Error error) => Failure(error);
 }

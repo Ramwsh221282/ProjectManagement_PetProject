@@ -18,9 +18,7 @@ public sealed record ProjectLifeTime
     /// </summary>
     public DateTime? FinishedAt { get; }
 
-    private ProjectLifeTime()
-    {
-    } // ef core
+    private ProjectLifeTime() { } // ef core
 
     public ProjectLifeTime(DateTime createdAt)
     {
@@ -41,28 +39,38 @@ public sealed record ProjectLifeTime
         return new ProjectLifeTime(CreatedAt, closedAt);
     }
 
-    public static Result<ProjectLifeTime, Error> Create(DateTime createdAt, DateTime? finishedAt)
-    {
-        ErrorResult<ProjectLifeTime> result = (createdAt, finishedAt) switch
+    public static Result<ProjectLifeTime> Create(DateTime createdAt, DateTime? finishedAt) =>
+        (createdAt, finishedAt) switch
         {
             { createdAt: var created, finishedAt: null } => (created) switch
             {
-                { } when created == DateTime.MaxValue => Error.InvalidFormat("Некорректная дата начала проекта."),
-                { } when created == DateTime.MinValue => Error.InvalidFormat("Некорректная дата начала проекта."),
+                { } when created == DateTime.MaxValue => Error.InvalidFormat(
+                    "Некорректная дата начала проекта."
+                ),
+                { } when created == DateTime.MinValue => Error.InvalidFormat(
+                    "Некорректная дата начала проекта."
+                ),
                 { } => new ProjectLifeTime(created, null),
             },
 
             { createdAt: var created, finishedAt: var closed } => (created, closed) switch
             {
-                { } when created == DateTime.MaxValue => Error.InvalidFormat("Некорректная дата начала проекта."),
-                { } when created == DateTime.MinValue => Error.InvalidFormat("Некорректная дата начала проекта."),
-                { } when closed == DateTime.MaxValue => Error.InvalidFormat("Некорректная дата окончания проекта."),
-                { } when closed == DateTime.MinValue => Error.InvalidFormat("Некорректная дата окончания проекта."),
+                { } when created == DateTime.MaxValue => Error.InvalidFormat(
+                    "Некорректная дата начала проекта."
+                ),
+                { } when created == DateTime.MinValue => Error.InvalidFormat(
+                    "Некорректная дата начала проекта."
+                ),
+                { } when closed == DateTime.MaxValue => Error.InvalidFormat(
+                    "Некорректная дата окончания проекта."
+                ),
+                { } when closed == DateTime.MinValue => Error.InvalidFormat(
+                    "Некорректная дата окончания проекта."
+                ),
                 { } when created > closed => Error.InvalidFormat(
-                    "Дата окончания проекта не может быть раньше даты начала."),
+                    "Дата окончания проекта не может быть раньше даты начала."
+                ),
                 { } => new ProjectLifeTime(created, closed),
             },
         };
-        return result;
-    }
 }

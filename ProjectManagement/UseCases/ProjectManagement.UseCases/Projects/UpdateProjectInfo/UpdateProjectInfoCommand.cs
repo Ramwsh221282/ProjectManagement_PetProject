@@ -2,7 +2,6 @@
 
 public sealed record UpdateProjectInfoCommand(
     Guid CreatorId,
- 
     Guid ProjectId,
     string? NewName = null,
     string? NewDescription = null

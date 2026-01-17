@@ -7,7 +7,7 @@ namespace ProjectManagement.Domain.UserContext.ValueObjects;
 public sealed record UserPhoneNumber
 {
     private const RegexOptions OPTIONS = RegexOptions.Compiled | RegexOptions.IgnoreCase;
-    
+
     /// <summary>
     /// Регулярное выражение для проверки номера телефона
     /// </summary>
@@ -25,25 +25,30 @@ public sealed record UserPhoneNumber
 
     private UserPhoneNumber(string phone) => Phone = phone;
 
-    private UserPhoneNumber() { } // ef core
+    private UserPhoneNumber()
+    {
+        Phone = null!;
+    } // ef core
 
     /// <summary>
     /// Номер телефона пользователя
     /// </summary>
     public string Phone { get; }
 
-    public static Result<UserPhoneNumber, Error> Create(string phone)
-    {
-        ErrorResult<UserPhoneNumber> result = phone switch
+    public static Result<UserPhoneNumber> Create(string phone) =>
+        phone switch
         {
-            { } when string.IsNullOrWhiteSpace(phone) => Error.Validation("Номер телефона был пустым."),
-            { } when phone.Length > MAX_PHONE_NUMBER_LENGTH => Error.Validation($"Номер телефона превышает длину {MAX_PHONE_NUMBER_LENGTH} символов."),
-            { } when !IsPhoneNumberMatchesTemplate(_phoneValidationTemplates, phone) => Error.InvalidFormat("Номер телефона некорректного формата."),
+            { } when string.IsNullOrWhiteSpace(phone) => Error.Validation(
+                "Номер телефона был пустым."
+            ),
+            { } when phone.Length > MAX_PHONE_NUMBER_LENGTH => Error.Validation(
+                $"Номер телефона превышает длину {MAX_PHONE_NUMBER_LENGTH} символов."
+            ),
+            { } when !IsPhoneNumberMatchesTemplate(_phoneValidationTemplates, phone) =>
+                Error.InvalidFormat("Номер телефона некорректного формата."),
             { } => new UserPhoneNumber(phone),
-            _ => throw new UnreachableException()
+            _ => throw new UnreachableException(),
         };
-        return result;
-    }
 
     private static bool IsPhoneNumberMatchesTemplate(IEnumerable<Regex> templates, string input)
     {

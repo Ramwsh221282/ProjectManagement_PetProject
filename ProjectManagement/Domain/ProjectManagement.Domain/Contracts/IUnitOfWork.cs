@@ -4,5 +4,5 @@ namespace ProjectManagement.Domain.Contracts;
 
 public interface IUnitOfWork
 {
-    Task<Result<Unit, Error>> SaveChangesAsync(CancellationToken ct = default);
+    Task<Result> SaveChangesAsync(CancellationToken ct = default);
 }

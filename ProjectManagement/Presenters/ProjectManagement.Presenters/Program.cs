@@ -9,6 +9,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.RegisterInfrastructureServices();
 builder.Services.RegisterProjectsUseCases();
 builder.Services.RegisterUsersUseCases();
+builder.Services.RegisterValidators();
 
 WebApplication app = builder.Build();
 await app.ApplyMigrations();

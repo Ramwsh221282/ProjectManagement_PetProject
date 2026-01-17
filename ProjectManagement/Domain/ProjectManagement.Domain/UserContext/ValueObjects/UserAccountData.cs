@@ -28,22 +28,13 @@ public sealed partial record UserAccountData
         Email = email;
         Login = login;
     }
-    
-    public Result<UserAccountData, Error> ChangeEmail(string email)
-    {
-        return Create(email, Login);
-    }
 
-    public UserAccountData Copy()
-    {
-        return new UserAccountData(Email, Login);
-    }
-    
-    public Result<UserAccountData, Error> ChangeLogin(string login)
-    {
-        return Create(Email, login);
-    }
-    
+    public Result<UserAccountData> ChangeEmail(string email) => Create(email, Login);
+
+    public UserAccountData Copy() => new(Email, Login);
+
+    public Result<UserAccountData> ChangeLogin(string login) => Create(Email, login);
+
     /// <summary>
     /// Почта
     /// </summary>
@@ -54,19 +45,26 @@ public sealed partial record UserAccountData
     /// </summary>
     public string Login { get; }
 
-    public static Result<UserAccountData, Error> Create(string email, string login)
-    {
-        ErrorResult<UserAccountData> result = (email, login) switch
+    public static Result<UserAccountData> Create(string email, string login) =>
+        (email, login) switch
         {
-            { } when !_emailValidationRegex.IsMatch(email) => Error.InvalidFormat("Некорректный формат почты"),
-            { } when string.IsNullOrWhiteSpace(email) => Error.Validation("Почта пользователя была пустой."),
-            { } when string.IsNullOrWhiteSpace(login) => Error.Validation("Логин пользователя был пустым."),
-            { } when login.Length > MAX_LOGIN_LENGTH => Error.Validation($"Логин пользователя превышает длину {MAX_LOGIN_LENGTH} символов"),
-            { } when login.Length < MIN_LOGIN_LENGTH => Error.Validation($"Логин пользователя менее {MIN_LOGIN_LENGTH} символов"),
+            { } when !_emailValidationRegex.IsMatch(email) => Error.InvalidFormat(
+                "Некорректный формат почты"
+            ),
+            { } when string.IsNullOrWhiteSpace(email) => Error.Validation(
+                "Почта пользователя была пустой."
+            ),
+            { } when string.IsNullOrWhiteSpace(login) => Error.Validation(
+                "Логин пользователя был пустым."
+            ),
+            { } when login.Length > MAX_LOGIN_LENGTH => Error.Validation(
+                $"Логин пользователя превышает длину {MAX_LOGIN_LENGTH} символов"
+            ),
+            { } when login.Length < MIN_LOGIN_LENGTH => Error.Validation(
+                $"Логин пользователя менее {MIN_LOGIN_LENGTH} символов"
+            ),
             { } => new UserAccountData(email, login),
         };
-        return result;
-    }
 
     /// <summary>
     /// Регулярное выражение для проверки email

@@ -33,23 +33,25 @@ public sealed record ProjectTaskInfo
         Description = description;
     }
 
-    private ProjectTaskInfo() { } // ef core
- 
-    public static Result<ProjectTaskInfo, Error> Create(string title, string description)
+    private ProjectTaskInfo()
     {
-        Func<Result<ProjectTaskInfo, Error>> operation = (title, description) switch
+        Title = null!;
+        Description = null!;
+    } // ef core
+
+    public static Result<ProjectTaskInfo> Create(string title, string description) =>
+        (title, description) switch
         {
-            { title: var t, description: var d } when string.IsNullOrWhiteSpace(t) => 
-                () => Failure<ProjectTaskInfo, Error>(Error.InvalidFormat("Заголовок задачи был пустым.")),
-            { title: var t, description: var d } when string.IsNullOrWhiteSpace(d) => 
-                () => Failure<ProjectTaskInfo, Error>(Error.InvalidFormat("Описание задачи было пустым.")),
-            { title: var t, description: var d } when t.Length > MAX_TITLE_LENGTH => 
-                () => Failure<ProjectTaskInfo, Error>(Error.InvalidFormat($"Длина заголовка задачи больше {MAX_TITLE_LENGTH} символов.")),
-            { title: var t, description: var d } when d.Length > MAX_DESCRIPTION_LENGTH => 
-                () => Failure<ProjectTaskInfo, Error>(Error.InvalidFormat($"Длина описания задачи больше {MAX_DESCRIPTION_LENGTH} символов.")),
-            { title: var t, description: var d } => 
-                () => Success<ProjectTaskInfo, Error>(new ProjectTaskInfo(t, d)),
+            { title: var t, description: _ } when string.IsNullOrWhiteSpace(t) =>
+                Error.InvalidFormat("Заголовок задачи был пустым."),
+            { title: _, description: var d } when string.IsNullOrWhiteSpace(d) =>
+                Error.InvalidFormat("Описание задачи было пустым."),
+            { title: var t, description: _ } when t.Length > MAX_TITLE_LENGTH =>
+                Error.InvalidFormat($"Длина заголовка задачи больше {MAX_TITLE_LENGTH} символов."),
+            { title: _, description: var d } when d.Length > MAX_DESCRIPTION_LENGTH =>
+                Error.InvalidFormat(
+                    $"Длина описания задачи больше {MAX_DESCRIPTION_LENGTH} символов."
+                ),
+            { title: var t, description: var d } => new ProjectTaskInfo(t, d),
         };
-        return operation();
-    }
 }

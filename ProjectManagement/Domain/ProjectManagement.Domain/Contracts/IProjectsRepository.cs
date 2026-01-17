@@ -9,6 +9,10 @@ public interface IProjectsRepository
 {
     Task<ProjectRegistrationApproval> GetApproval(ProjectName name, CancellationToken ct = default);
     Task Add(Project project, CancellationToken ct = default);
-    Task<Result<Project, Nothing>> GetProject(Guid id, bool withLock = false, CancellationToken ct = default);
+    Task<Result<Project>> GetProject(
+        Guid id,
+        bool withLock = false,
+        CancellationToken ct = default
+    );
     Task<bool> Exists(ProjectTaskAssignment assignment, CancellationToken ct = default);
 }

@@ -1,6 +1,6 @@
 ﻿namespace ProjectManagement.Domain.Utilities;
 
-public sealed record Error
+public record Error
 {
     public ErrorType Type { get; private init; }
     public string Message { get; private init; }

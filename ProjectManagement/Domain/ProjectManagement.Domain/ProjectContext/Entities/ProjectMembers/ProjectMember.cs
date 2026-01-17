@@ -10,7 +10,12 @@ namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
 /// </summary>
 public sealed class ProjectMember
 {
-    private ProjectMember() { } // ef core
+    private ProjectMember()
+    {
+        MemberId = default!;
+        Login = default!;
+        Status = default!;
+    } // ef core
 
     /// <summary>
     /// Задачи, на которые участник записался
@@ -76,12 +81,12 @@ public sealed class ProjectMember
         Project = project;
         ProjectId = project.Id;
     }
-    
+
     public void AssignTo(ProjectTaskAssignment assignment)
     {
         _assignments.Add(assignment);
     }
-    
+
     public static ProjectMember CreateNewContributor(ProjectMemberId id, ProjectMemberLogin login)
     {
         ProjectMemberStatus status = new ProjectMemberStatusContributor();

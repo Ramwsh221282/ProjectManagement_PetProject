@@ -1,11 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Domain.UserContext;
-using ProjectManagement.Domain.UserContext.ValueObjects;
-using ProjectManagement.Domain.UserContext.ValueObjects.Enumerations;
 using ProjectManagement.Domain.Utilities;
-using ProjectManagement.Infrastructure.UserContext;
-using ProjectManagement.Presenters.Controllers.ProjectsContext;
-using ProjectManagement.UseCases.Projects.CreateProjectByUser;
 using ProjectManagement.UseCases.Users.ModifyAccountData;
 using ProjectManagement.UseCases.Users.RegisterUser;
 using ProjectManagement.UseCases.Users.RemoveUserProfile;
@@ -35,13 +30,13 @@ public sealed class UsersController
         [FromHeader(Name = "phone")] string phone,
         [FromServices] RegisterUserHandler handler,
         CancellationToken ct
-        )
+    )
     {
         RegisterUserCommand command = new(Email: email, Login: login, Phone: phone);
-        Result<User, Error> result = await handler.Handle(command, ct);
+        Result<User> result = await handler.Handle(command, ct);
         return Envelope.FromResult(result, user => user.ToDto());
     }
-    
+
     /// <summary>
     /// Изменение данных аккаунта пользователя
     /// </summary>
@@ -58,13 +53,13 @@ public sealed class UsersController
         [FromQuery(Name = "login")] string? login,
         [FromServices] ModifyUserAccountDataHandler handler,
         CancellationToken ct
-        )
+    )
     {
         ModifyUserAccountDataCommand command = new(userId, email, login);
-        Result<User, Error> result = await handler.Handle(command, ct);
+        Result<User> result = await handler.Handle(command, ct);
         return Envelope.FromResult(result, user => user.ToDto());
     }
-    
+
     /// <summary>
     /// Удаление пользователя
     /// </summary>
@@ -77,10 +72,10 @@ public sealed class UsersController
         [FromRoute(Name = "id")] Guid userId,
         [FromServices] RemoveUserProfileHandler handler,
         CancellationToken ct
-        )
+    )
     {
         RemoveUserCommand command = new(userId);
-        Result<User, Error> result = await handler.Handle(command, ct);
+        Result<User> result = await handler.Handle(command, ct);
         return Envelope.FromResult(result, user => user.ToDto());
     }
 }

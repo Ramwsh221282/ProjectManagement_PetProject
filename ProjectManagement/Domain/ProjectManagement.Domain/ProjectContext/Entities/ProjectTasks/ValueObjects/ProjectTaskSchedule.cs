@@ -25,23 +25,24 @@ public readonly record struct ProjectTaskSchedule
         Closed = closed;
     }
 
-    public static Result<ProjectTaskSchedule, Error> Create(DateTime created, DateTime? closed)
-    {
-        Func<Result<ProjectTaskSchedule, Error>> operation = (created, closed) switch
+    public static Result<ProjectTaskSchedule> Create(DateTime created, DateTime? closed) =>
+        (created, closed) switch
         {
-            { created: var c, closed: null } when c == DateTime.MaxValue => ()
-                => Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата начала задачи некорректна.")),
-            { created: var c, closed: null } when c == DateTime.MinValue => ()
-                => Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата конца задачи некорректна.")),
-            { created: var c, closed: var cl } when cl == DateTime.MaxValue => ()
-                => Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата начала задачи некорректна.")),
-            { created: var c, closed: var cl } when cl == DateTime.MinValue => ()
-                => Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата конца задачи некорректна.")),
-            { created: var c, closed: var cl } when cl < c => () => 
-                Failure<ProjectTaskSchedule, Error>(Error.InvalidFormat("Дата окончания задачи менее даты начала задачи.")),
-            { created: var c, closed: var cl } => () => Success<ProjectTaskSchedule, Error>(new ProjectTaskSchedule(c, cl)),
+            { created: var c, closed: null } when c == DateTime.MaxValue => Error.InvalidFormat(
+                "Дата начала задачи некорректна."
+            ),
+            { created: var c, closed: null } when c == DateTime.MinValue => Error.InvalidFormat(
+                "Дата конца задачи некорректна."
+            ),
+            { created: _, closed: var cl } when cl == DateTime.MaxValue => Error.InvalidFormat(
+                "Дата начала задачи некорректна."
+            ),
+            { created: _, closed: var cl } when cl == DateTime.MinValue => Error.InvalidFormat(
+                "Дата конца задачи некорректна."
+            ),
+            { created: var c, closed: var cl } when cl < c => Error.InvalidFormat(
+                "Дата окончания задачи менее даты начала задачи."
+            ),
+            { created: var c, closed: var cl } => new ProjectTaskSchedule(c, cl),
         };
-        
-        return operation();
-    }
 }

@@ -18,25 +18,20 @@ public sealed record ProjectDescription
     /// </summary>
     public string Value { get; }
 
-    private ProjectDescription(string value)
-    {
-        Value = value;
-    }
+    private ProjectDescription(string value) => Value = value;
 
-    private ProjectDescription()
-    {
-        // ef core
-    }
+    private ProjectDescription() => Value = null!;
 
-    public static Result<ProjectDescription, Error> Create(string value)
-    {
-         ErrorResult<ProjectDescription> result = value switch
+    public static Result<ProjectDescription> Create(string value) =>
+        value switch
         {
-            { } when string.IsNullOrWhiteSpace(value) => Error.Validation("Описание проекта было пустым."),
-            { } when value.Length > MAX_PROJECT_DESCRIPTION_LENGTH => Error.Validation($"Длина проекта превышает длину в {MAX_PROJECT_DESCRIPTION_LENGTH} символов."),
+            { } when string.IsNullOrWhiteSpace(value) => Error.Validation(
+                "Описание проекта было пустым."
+            ),
+            { } when value.Length > MAX_PROJECT_DESCRIPTION_LENGTH => Error.Validation(
+                $"Длина проекта превышает длину в {MAX_PROJECT_DESCRIPTION_LENGTH} символов."
+            ),
             { } => new ProjectDescription(value),
-            _ => throw new UnreachableException()
+            _ => throw new UnreachableException(),
         };
-        return result;
-    }
 }

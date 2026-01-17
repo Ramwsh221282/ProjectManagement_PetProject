@@ -13,10 +13,8 @@ public readonly record struct ProjectMemberId
 
     public Guid Value { get; }
 
-    public static Result<ProjectMemberId, Error> Create(Guid value)
-    {
-        if (value == Guid.Empty)
-            return Failure<ProjectMemberId, Error>(Error.InvalidFormat("Идентификатор участника проекта некорректный."));
-        return Success<ProjectMemberId, Error>(new ProjectMemberId(value));
-    }
+    public static Result<ProjectMemberId> Create(Guid value) =>
+        value == Guid.Empty
+            ? Error.InvalidFormat("Идентификатор участника проекта некорректный.")
+            : new ProjectMemberId(value);
 }

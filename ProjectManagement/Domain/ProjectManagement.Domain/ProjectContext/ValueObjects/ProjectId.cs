@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using ProjectManagement.Domain.Utilities;
+﻿using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.Domain.ProjectContext.ValueObjects;
 
@@ -14,13 +13,12 @@ public readonly record struct ProjectId
 
     public ProjectId(Guid value) => Value = value;
 
-    public static Result<ProjectId, Error> Create(Guid value)
-    {
-        ErrorResult<ProjectId> result = value switch
+    public static Result<ProjectId> Create(Guid value) =>
+        value switch
         {
-            { } when value == Guid.Empty => Error.InvalidFormat("Идентификатор проекта некорректный."),
+            { } when value == Guid.Empty => Error.InvalidFormat(
+                "Идентификатор проекта некорректный."
+            ),
             { } => new ProjectId(value),
         };
-        return result;
-    }
 }

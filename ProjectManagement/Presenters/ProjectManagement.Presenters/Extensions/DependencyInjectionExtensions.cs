@@ -1,4 +1,5 @@
-﻿using ProjectManagement.Domain.Contracts;
+﻿using FluentValidation;
+using ProjectManagement.Domain.Contracts;
 using ProjectManagement.Infrastructure.Common;
 using ProjectManagement.Infrastructure.ProjectContext;
 using ProjectManagement.Infrastructure.UserContext;
@@ -43,5 +44,10 @@ public static class DependencyInjectionExtensions
         services.AddScoped<RegisterUserHandler>();
         services.AddScoped<ModifyUserAccountDataHandler>();
         services.AddScoped<RemoveUserProfileHandler>();
+    }
+
+    public static void RegisterValidators(this IServiceCollection services)
+    {
+        services.AddValidatorsFromAssembly(typeof(RegisterUserCommand).Assembly);
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Net;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Domain.ProjectContext;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
@@ -36,17 +35,18 @@ public class ProjectsController
         [FromBody] CreateProjectRequest request,
         [FromServices] CreateProjectByUserHandler handler,
         CancellationToken ct
-        )
+    )
     {
         CreateProjectByUserCommand command = new(
-            UserId: userId, 
-            ProjectName: request.Name, 
-            ProjectDescription: request.Description);
-        
-        Result<Project, Error> result = await handler.Handle(command, ct);
+            UserId: userId,
+            ProjectName: request.Name,
+            ProjectDescription: request.Description
+        );
+
+        Result<Project> result = await handler.Handle(command, ct);
         return Envelope.FromResult(result, p => p.ToDto());
     }
-    
+
     /// <summary>
     /// Добавление задач в проект
     /// </summary>
@@ -63,18 +63,23 @@ public class ProjectsController
         [FromBody] AddProjectTasksRequest request,
         [FromServices] AddProjectTasksHandler handler,
         CancellationToken ct
-        )
+    )
     {
         AddProjectTasksCommand command = new(
             CreatorId: userId,
             ProjectId: projectId,
-            Tasks: request.Tasks.Select(t => new AddProjectTaskDto(t.MembersLimit, t.Title, t.Description, t.CloseDate))
-            );
-        
-        Result<IEnumerable<ProjectTask>, Error> result = await handler.Handle(command, ct);
+            Tasks: request.Tasks.Select(t => new AddProjectTaskDto(
+                t.MembersLimit,
+                t.Title,
+                t.Description,
+                t.CloseDate
+            ))
+        );
+
+        Result<IEnumerable<ProjectTask>> result = await handler.Handle(command, ct);
         return Envelope.FromResult(result, tasks => tasks.Select(t => t.ToDto()));
     }
-    
+
     /// <summary>
     /// Добавление участников в проект
     /// </summary>
@@ -99,10 +104,10 @@ public class ProjectsController
             MemberIds: request.Members.Select(m => m.Id)
         );
 
-        Result<IEnumerable<ProjectMember>, Error> result = await handler.Handle(command, ct);
+        Result<IEnumerable<ProjectMember>> result = await handler.Handle(command, ct);
         return Envelope.FromResult(result, members => members.Select(m => m.ToDto()));
     }
-    
+
     /// <summary>
     /// Создание назначения участника к задаче
     /// </summary>
@@ -121,19 +126,19 @@ public class ProjectsController
         [FromBody] AssignMemberToTaskRequest request,
         [FromServices] AssignMemberToTaskHandler handler,
         CancellationToken ct
-        )
+    )
     {
         AssignMemberToTaskCommand command = new(
             AssignerId: userId,
             ProjectId: projectId,
             TaskId: taskId,
             MemberId: request.MemberId
-            );
+        );
 
-        Result<ProjectTaskAssignment, Error> result = await handler.Handle(command, ct);
+        Result<ProjectTaskAssignment> result = await handler.Handle(command, ct);
         return Envelope.FromResult(result, assignment => assignment.ToDto());
     }
-    
+
     /// <summary>
     /// Закрытие задачи
     /// </summary>
@@ -150,18 +155,18 @@ public class ProjectsController
         [FromRoute(Name = "taskid")] Guid taskId,
         [FromServices] CloseProjectTaskHandler handler,
         CancellationToken ct
-        )
+    )
     {
         CloseProjectTaskCommand command = new(
             CloserId: userId,
             ProjectId: projectId,
             TaskId: taskId
-            );
-        
-        Result<ProjectTask, Error> result = await handler.Handle(command, ct);
+        );
+
+        Result<ProjectTask> result = await handler.Handle(command, ct);
         return Envelope.FromResult(result, task => task.ToDto());
     }
-    
+
     /// <summary>
     /// Обновление информации о проекте
     /// </summary>
@@ -180,16 +185,16 @@ public class ProjectsController
         [FromQuery(Name = "description")] string? description,
         [FromServices] UpdateProjectInfoHandler handler,
         CancellationToken ct
-        )
+    )
     {
         UpdateProjectInfoCommand command = new(
             CreatorId: userId,
             ProjectId: projectId,
             NewName: name,
             NewDescription: description
-            );
-        
-        Result<Project, Error> result = await handler.Handle(command, ct);
+        );
+
+        Result<Project> result = await handler.Handle(command, ct);
         return Envelope.FromResult(result, project => project.ToDto());
     }
 }

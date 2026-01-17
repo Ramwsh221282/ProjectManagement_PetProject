@@ -13,16 +13,18 @@ public readonly record struct UserRegistrationDate
     /// </summary>
     public DateOnly Value { get; }
 
-    public static UserRegistrationDate CreateByCurrentDate() => new(DateOnly.FromDateTime(DateTime.UtcNow));
-    
-    public static Result<UserRegistrationDate, Error> Create(DateOnly value)
-    {
-        ErrorResult<UserRegistrationDate> result = value switch
+    public static UserRegistrationDate CreateByCurrentDate() =>
+        new(DateOnly.FromDateTime(DateTime.UtcNow));
+
+    public static Result<UserRegistrationDate> Create(DateOnly value) =>
+        value switch
         {
-            { } when value == DateOnly.MinValue => Error.InvalidFormat("Дата регистрации пользователя некорректна"),
-            { } when value == DateOnly.MaxValue => Error.InvalidFormat("Дата регистрации пользователя некорректна"),
+            { } when value == DateOnly.MinValue => Error.InvalidFormat(
+                "Дата регистрации пользователя некорректна"
+            ),
+            { } when value == DateOnly.MaxValue => Error.InvalidFormat(
+                "Дата регистрации пользователя некорректна"
+            ),
             { } => new UserRegistrationDate(value),
         };
-        return result;
-    }
 }

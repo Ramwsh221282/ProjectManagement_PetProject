@@ -36,7 +36,8 @@ public sealed class Envelope : IResult
         return httpContext.Response.WriteAsJsonAsync(this);
     }
 
-    public static Envelope FromResult<T, Y>(Result<T, Error> result, Func<T, Y> successMapper)
+    public static Envelope FromResult<T, Y>(Result<T> result, Func<T, Y> successMapper)
+        where T : notnull
     {
         if (result.IsSuccess)
             return new Envelope(HttpStatusCode.OK, successMapper(result.OnSuccess));
@@ -44,7 +45,8 @@ public sealed class Envelope : IResult
         return new Envelope(code, null, result.OnError.Message);
     }
 
-    private static HttpStatusCode StatusCodeFromResult<T>(Result<T, Error> result)
+    private static HttpStatusCode StatusCodeFromResult<T>(Result<T> result)
+        where T : notnull
     {
         return result.OnError.Type switch
         {
@@ -53,8 +55,10 @@ public sealed class Envelope : IResult
             ErrorType.InternalError => HttpStatusCode.InternalServerError,
             ErrorType.Validation => HttpStatusCode.BadRequest,
             ErrorType.InvalidFormat => HttpStatusCode.BadRequest,
-            ErrorType.None => throw new InvalidOperationException("None error type specified in operation result."),
-            _ => HttpStatusCode.InternalServerError
+            ErrorType.None => throw new InvalidOperationException(
+                "None error type specified in operation result."
+            ),
+            _ => HttpStatusCode.InternalServerError,
         };
     }
 }

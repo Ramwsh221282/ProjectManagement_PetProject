@@ -16,18 +16,14 @@ public readonly record struct UserId
     /// </summary>
     public Guid Value { get; }
 
-    public static UserId NewUserId()
-    {
-        return new UserId(Guid.NewGuid());
-    }
-    
-    public static Result<UserId, Error> Create(Guid value)
-    {
-        ErrorResult<UserId> result = value switch
+    public static UserId NewUserId() => new(Guid.NewGuid());
+
+    public static Result<UserId> Create(Guid value) =>
+        value switch
         {
-            { } when value == Guid.Empty => Error.InvalidFormat("Идентификатор пользователя некорректный."),
+            { } when value == Guid.Empty => Error.InvalidFormat(
+                "Идентификатор пользователя некорректный."
+            ),
             { } => new UserId(value),
         };
-        return result;
-    }
 }
