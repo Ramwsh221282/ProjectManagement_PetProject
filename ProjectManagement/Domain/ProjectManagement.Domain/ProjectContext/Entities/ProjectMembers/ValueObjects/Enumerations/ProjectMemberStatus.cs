@@ -5,7 +5,7 @@ namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueO
 /// <summary>
 /// Семейство статусов участника проекта
 /// </summary>
-public abstract class ProjectMemberStatus : Enumeration<ProjectMemberStatus>
+public class ProjectMemberStatus : Enumeration<ProjectMemberStatus>
 {
     protected ProjectMemberStatus(int value, string name)
         : base(value, name) { }

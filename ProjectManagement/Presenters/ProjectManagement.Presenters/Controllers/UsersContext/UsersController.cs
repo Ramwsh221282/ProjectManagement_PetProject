@@ -1,55 +1,81 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Domain.UserContext;
-using ProjectManagement.Domain.UserContext.ValueObjects;
-using ProjectManagement.Domain.UserContext.ValueObjects.Enumerations;
-using ProjectManagement.Infrastructure.UserContext;
-using ProjectManagement.Presenters.Controllers.ProjectsContext;
+using ProjectManagement.Domain.Utilities;
+using ProjectManagement.UseCases.Users.ModifyAccountData;
+using ProjectManagement.UseCases.Users.RegisterUser;
+using ProjectManagement.UseCases.Users.RemoveUserProfile;
 
 namespace ProjectManagement.Presenters.Controllers.UsersContext;
 
+/// <summary>
+/// Контроллер для работы с пользователями
+/// </summary>
 [ApiController]
 [Route("api/users")]
 public sealed class UsersController
 {
+    /// <summary>
+    /// Регистрация пользователя
+    /// </summary>
+    /// <param name="email">Почта</param>
+    /// <param name="login">Логин</param>
+    /// <param name="phone">Телефон</param>
+    /// <param name="handler">Обработчик регистрации пользователя</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Созданный пользователь</returns>
     [HttpPost]
-    public IResult CreateUser(
+    public async Task<Envelope> CreateUser(
         [FromHeader(Name = "email")] string email,
         [FromHeader(Name = "login")] string login,
-        [FromHeader(Name = "phone")] string phone
-        )
+        [FromHeader(Name = "phone")] string phone,
+        [FromServices] RegisterUserHandler handler,
+        CancellationToken ct
+    )
     {
-        UserId userId = new UserId();
-        UserAccountData accountData = UserAccountData.Create(email, login);
-        UserPhoneNumber phoneNumber = UserPhoneNumber.Create(phone);
-        UserRegistrationDate date = UserRegistrationDate.Create(DateOnly.FromDateTime(DateTime.UtcNow));
-        var status = new UserStatusOnline();
-        var user = new User(userId, accountData, phoneNumber, date, status);
-        UsersStorage.Users.Add(user.UserId.Value, user);
-        return new Envelope(user.ToDto());
+        RegisterUserCommand command = new(Email: email, Login: login, Phone: phone);
+        Result<User> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, user => user.ToDto());
+    }
+
+    /// <summary>
+    /// Изменение данных аккаунта пользователя
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="email">Новая почта</param>
+    /// <param name="login">Новый логин</param>
+    /// <param name="handler">Обработчик изменения данных аккаунта</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Измененный пользователь</returns>
+    [HttpPut("{id:guid}")]
+    public async Task<Envelope> ModifyAccountData(
+        [FromRoute(Name = "id")] Guid userId,
+        [FromQuery(Name = "email")] string? email,
+        [FromQuery(Name = "login")] string? login,
+        [FromServices] ModifyUserAccountDataHandler handler,
+        CancellationToken ct
+    )
+    {
+        ModifyUserAccountDataCommand command = new(userId, email, login);
+        Result<User> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, user => user.ToDto());
+    }
+
+    /// <summary>
+    /// Удаление пользователя
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="handler">Обработчик удаления пользователя</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Удаленный пользователь</returns>
+    [HttpDelete("{id:guid}")]
+    public async Task<Envelope> DeleteUser(
+        [FromRoute(Name = "id")] Guid userId,
+        [FromServices] RemoveUserProfileHandler handler,
+        CancellationToken ct
+    )
+    {
+        RemoveUserCommand command = new(userId);
+        Result<User> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, user => user.ToDto());
     }
 }
-
-public sealed class UserDto
-{
-    public required Guid Id { get; set; }
-    public required string Login { get; set; }
-    public required string Phone { get; set; }
-    public required DateTime Created { get; set; }
-    public required string Status { get; set; }
-}
-
-public static class UserExtensions
-{
-    public static UserDto ToDto(this User user)
-    {
-        return new UserDto()
-        {
-            Id = user.UserId.Value,
-            Created = user.RegistrationDate.Value.ToDateTime(new TimeOnly()),
-            Login = user.AccountData.Login,
-            Phone = user.PhoneNumber.Phone,
-            Status = user.Status.Name
-        };
-    }
-}
-

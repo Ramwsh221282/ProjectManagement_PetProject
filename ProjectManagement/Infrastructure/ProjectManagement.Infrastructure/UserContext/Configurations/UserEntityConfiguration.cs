@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProjectManagement.Domain.UserContext;
 using ProjectManagement.Domain.UserContext.ValueObjects;
+using ProjectManagement.Domain.UserContext.ValueObjects.Enumerations;
 
 namespace ProjectManagement.Infrastructure.UserContext.Configurations;
 
@@ -16,23 +17,26 @@ public sealed class UserEntityConfiguration : IEntityTypeConfiguration<User>
         builder.ToTable("users");
 
         // ключ таблицы user_id
-        builder.HasKey(x => x.UserId).HasName("user_id");
+        builder.HasKey(x => x.UserId).HasName("pk_users");
+        
+        builder.Property(x => x.UserId)
+            .HasColumnName("id")
+            .HasConversion(toDb => toDb.Value, fromDb => UserId.Create(fromDb).OnSuccess);
 
         // конфигурация свойства phoneNumber как столбца таблицы phone_number
         builder
             .Property(x => x.PhoneNumber)
             .IsRequired()
             .HasColumnName("phone_number")
-            .HasConversion(toDb => toDb.Phone, fromDb => UserPhoneNumber.Create(fromDb));
+            .HasConversion(toDb => toDb.Phone, fromDb => UserPhoneNumber.Create(fromDb).OnSuccess);
 
         // конфигурация свойства registrationDate как столбца таблицы registration_date
         builder
             .Property(x => x.RegistrationDate)
             .IsRequired()
             .HasColumnName("registration_date")
-            .HasConversion(toDb => toDb.Value, fromDb => UserRegistrationDate.Create(fromDb));
-
-        // конфигурация статуса пользователя (сложного объекта)
+            .HasConversion(toDb => toDb.Value, fromDb => UserRegistrationDate.Create(fromDb).OnSuccess);
+        
         builder.ComplexProperty(
             x => x.Status,
             cpb =>
@@ -51,5 +55,7 @@ public sealed class UserEntityConfiguration : IEntityTypeConfiguration<User>
                 cpb.Property(x => x.Login).IsRequired().HasColumnName("login");
             }
         );
+
+        builder.HasIndex(x => x.PhoneNumber).IsUnique();
     }
 }

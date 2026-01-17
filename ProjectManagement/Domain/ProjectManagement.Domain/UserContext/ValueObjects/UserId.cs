@@ -1,4 +1,6 @@
-﻿namespace ProjectManagement.Domain.UserContext.ValueObjects;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.UserContext.ValueObjects;
 
 /// <summary>
 /// Идентификатор пользователя
@@ -14,8 +16,14 @@ public readonly record struct UserId
     /// </summary>
     public Guid Value { get; }
 
-    public static UserId Create(Guid value) =>
-        value == Guid.Empty
-            ? throw new ArgumentException("Идентификатор пользователя некорректный.")
-            : new UserId(value);
+    public static UserId NewUserId() => new(Guid.NewGuid());
+
+    public static Result<UserId> Create(Guid value) =>
+        value switch
+        {
+            { } when value == Guid.Empty => Error.InvalidFormat(
+                "Идентификатор пользователя некорректный."
+            ),
+            { } => new UserId(value),
+        };
 }

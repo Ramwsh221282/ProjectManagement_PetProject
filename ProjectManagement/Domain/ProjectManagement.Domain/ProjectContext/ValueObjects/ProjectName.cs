@@ -1,4 +1,7 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.ValueObjects;
+﻿using System.Diagnostics;
+using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.ValueObjects;
 
 /// <summary>
 /// Название проекта
@@ -20,16 +23,21 @@ public sealed record ProjectName
         Value = value;
     }
 
-    public static ProjectName Create(string value)
+    private ProjectName()
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Название проекта было пустым.");
+        Value = null!;
+    } // ef core
 
-        if (value.Length > MAX_PROJECT_NAME_LENGTH)
-            throw new ArgumentException(
-                $"Длина проекта превышает максимальную длину в {MAX_PROJECT_NAME_LENGTH} символов"
-            );
-
-        return new ProjectName(value);
-    }
+    public static Result<ProjectName> Create(string value) =>
+        value switch
+        {
+            { } when string.IsNullOrWhiteSpace(value) => Error.Validation(
+                "Название проекта было пустым."
+            ),
+            { } when value.Length > MAX_PROJECT_NAME_LENGTH => Error.Validation(
+                $"Длина проекта превышает максимальную длину в {MAX_PROJECT_NAME_LENGTH} символов."
+            ),
+            { } => new ProjectName(value),
+            _ => throw new UnreachableException(),
+        };
 }

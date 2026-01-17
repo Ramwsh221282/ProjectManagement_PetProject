@@ -1,4 +1,6 @@
-﻿namespace ProjectManagement.Domain.ProjectContext.ValueObjects;
+﻿using ProjectManagement.Domain.Utilities;
+
+namespace ProjectManagement.Domain.ProjectContext.ValueObjects;
 
 /// <summary>
 /// Идентификатор проекта
@@ -11,8 +13,12 @@ public readonly record struct ProjectId
 
     public ProjectId(Guid value) => Value = value;
 
-    public static ProjectId Create(Guid value) =>
-        value == Guid.Empty
-            ? throw new ArgumentException("Идентификатор проекта некорректный.")
-            : new ProjectId(value);
+    public static Result<ProjectId> Create(Guid value) =>
+        value switch
+        {
+            { } when value == Guid.Empty => Error.InvalidFormat(
+                "Идентификатор проекта некорректный."
+            ),
+            { } => new ProjectId(value),
+        };
 }

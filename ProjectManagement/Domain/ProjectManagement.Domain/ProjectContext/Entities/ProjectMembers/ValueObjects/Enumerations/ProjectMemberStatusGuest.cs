@@ -5,7 +5,7 @@ namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueO
 /// <summary>
 /// Гость участник проекта
 /// </summary>
-public sealed class ProjectMemberStatusGuest : Enumeration<ProjectMemberStatus>
+public sealed class ProjectMemberStatusGuest : ProjectMemberStatus
 {
     public ProjectMemberStatusGuest(int value, string name)
         : base(2, "Гость") { }

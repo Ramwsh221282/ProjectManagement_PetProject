@@ -5,10 +5,10 @@ namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObj
 /// <summary>
 /// Семейство статусов задачи (умное перечисление)
 /// </summary>
-public abstract class ProjectTaskStatus : Enumeration<ProjectTaskStatus>
+public class ProjectTaskStatus : Enumeration<ProjectTaskStatus>
 {
     protected ProjectTaskStatus(int value, string name)
         : base(value, name) { }
 
-    public abstract bool CanBeRedacted();
+    public virtual bool CanBeRedacted() => false;
 }

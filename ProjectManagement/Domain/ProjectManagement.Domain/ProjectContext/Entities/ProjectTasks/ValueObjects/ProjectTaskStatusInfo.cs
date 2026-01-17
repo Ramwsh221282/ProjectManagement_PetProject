@@ -7,6 +7,12 @@ namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObj
 /// </summary>
 public sealed record ProjectTaskStatusInfo
 {
+    private ProjectTaskStatusInfo()
+    {
+        Status = default!;
+        Schedule = default!;
+    } // ef core
+
     /// <summary>
     /// Статус задачи
     /// </summary>

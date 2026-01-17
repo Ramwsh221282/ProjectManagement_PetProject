@@ -5,7 +5,7 @@ namespace ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueO
 /// <summary>
 /// Заблокированный участник проекта
 /// </summary>
-public sealed class ProjectMemberStatusBlocked : Enumeration<ProjectMemberStatus>
+public sealed class ProjectMemberStatusBlocked : ProjectMemberStatus
 {
     public ProjectMemberStatusBlocked(int value, string name)
         : base(3, "Заблокирован") { }

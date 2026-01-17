@@ -1,269 +1,200 @@
-﻿using System.Net;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Domain.ProjectContext;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMemberAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectMembers.ValueObjects.Enumerations;
+using ProjectManagement.Domain.ProjectContext.Entities.ProjectTaskAssignments;
 using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects;
-using ProjectManagement.Domain.ProjectContext.Entities.ProjectTasks.ValueObjects.Enumerations;
-using ProjectManagement.Domain.ProjectContext.ValueObjects;
-using ProjectManagement.Infrastructure;
-using ProjectManagement.Infrastructure.UserContext;
-using ProjectManagement.UseCases.Projects.AddProjectMember;
-using ProjectManagement.UseCases.Projects.AddProjectTask;
-using ProjectManagement.UseCases.Projects.AssignTaskToProject;
-using ProjectManagement.UseCases.Projects.ProjectClosing;
-using ProjectManagement.UseCases.Projects.ProjectCreation;
-using ProjectManagement.UseCases.Projects.ProjectUpdating;
+using ProjectManagement.Domain.Utilities;
+using ProjectManagement.Presenters.Controllers.ProjectsContext.Requests;
+using ProjectManagement.UseCases.Projects.AddProjectMembers;
+using ProjectManagement.UseCases.Projects.AddProjectTasks;
+using ProjectManagement.UseCases.Projects.AssignMemberToTask;
+using ProjectManagement.UseCases.Projects.CloseProjectTask;
+using ProjectManagement.UseCases.Projects.CreateProjectByUser;
+using ProjectManagement.UseCases.Projects.UpdateProjectInfo;
 
 namespace ProjectManagement.Presenters.Controllers.ProjectsContext;
 
+/// <summary>
+/// Контроллер для работы с проектами
+/// </summary>
 [ApiController]
 [Route("api/projects")]
 public class ProjectsController
 {
+    /// <summary>
+    /// Создание проекта
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="request">Запрос на создание проекта (UserId, Name, Description)</param>
+    /// <param name="handler">Обработчик создания проекта</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Созданный проект</returns>
     [HttpPost]
-    public async Task<IResult> Create(
+    public async Task<Envelope> Create(
+        [FromHeader(Name = "user-id")] Guid userId,
         [FromBody] CreateProjectRequest request,
-        [FromServices] CreateProjectCommandHandler handler,
-        CancellationToken ct)
-    {
-        CreateProjectCommand command = new(request.Name, request.Description);
-        Project project = await handler.Handle(command, ct);
-        ProjectDto dto = project.ToDto();
-        return new Envelope(HttpStatusCode.OK, dto);
-    }
-
-    [HttpGet("{name}")]
-    public IResult Get([FromRoute] string name)
-    {
-        Project? project = ProjectsStorage.Projects.Values.FirstOrDefault(c => c.Name.Value == name);
-        if (project == null)
-            return new Envelope(HttpStatusCode.NotFound, $"Не найден проект с названием: {name}");
-        return new Envelope(project.ToDto());
-    }
-    
-    [HttpGet("{id:guid}")]
-    public IResult Get([FromRoute] Guid id)
-    {
-        if (!ProjectsStorage.Projects.TryGetValue(id, out Project? projectEntity))
-            return new Envelope(HttpStatusCode.NotFound, $"Не найден проект с ID: {id}");
-        return new Envelope(projectEntity.ToDto());
-    }
-
-    [HttpPatch("{name}/close")]
-    public async Task<IResult> Close(
-        [FromRoute] string name,
-        [FromServices] CloseProjectCommandHandler handler,
-        CancellationToken ct)
-    {
-        CloseProjectCommand command = new(name);
-        Project project = await handler.Handle(command, ct);
-        return new Envelope(project.ToDto());
-    }
-
-    [HttpPut("{name}")]
-    public async Task<IResult> Update(
-        [FromRoute(Name = "name")] string identityName,
-        [FromQuery(Name = "newname")] string newname, 
-        [FromQuery(Name = "description")] string description,
-        [FromServices] UpdateProjectCommandHandler handler,
-        CancellationToken ct = default)
-    {
-        UpdateProjectCommand command = new(identityName, newname, description);
-        Project result = await handler.Handle(command, ct);
-        return new Envelope(result.ToDto());
-    }
-
-    [HttpPost("{name}/tasks")]
-    public async Task<IResult> AddTasks(
-        [FromRoute(Name = "name")] string name,
-        [FromBody] AddProjectTaskRequest request,
-        [FromServices] AddProjectTaskCommandHandler handler,
-        CancellationToken ct)
-    {
-        AddProjectTaskCommand command = new(
-            name, 
-            request.MembersLimit,
-            request.Status, 
-            request.FinishedAt,
-            request.Title, 
-            request.Description);
-        ProjectTask result = await handler.Handle(command, ct);
-        return new Envelope(result.ToDto(result.Project));
-    }
-
-    [HttpPost("{name}/members/{userId:guid}")]
-    public async Task<IResult> AddMember(
-        [FromRoute(Name = "name")] string projectName,
-        [FromRoute(Name = "userId")] Guid userId,
-        [FromServices] AddProjectMemberTaskCommandHandler handler,
-        CancellationToken ct
-        )
-    {
-        AddProjectMemberTaskCommand command = new(userId, projectName);
-        ProjectMember result = await handler.Handle(command, ct);
-        return new Envelope(result.ToDto(result.Project));
-    }
-    
-    [HttpPost("{name}/tasks/{taskId:guid}/assignment")]
-    public async Task<IResult> CreateAssignment(
-        [FromRoute(Name = "name")] string name,
-        [FromRoute(Name = "taskId")] Guid taskId,
-        [FromRoute(Name = "memberId")] Guid memberId,
-        [FromServices] AssignTaskToProjectCommandHandler handler,
+        [FromServices] CreateProjectByUserHandler handler,
         CancellationToken ct
     )
     {
-        AssignTaskToProjectCommand command = new(name, taskId, memberId);
-        ProjectTaskAssignment result = await handler.Handle(command, ct);
-        return new Envelope(result.ToDto());
-    }
-}
+        CreateProjectByUserCommand command = new(
+            UserId: userId,
+            ProjectName: request.Name,
+            ProjectDescription: request.Description
+        );
 
-public sealed record AddProjectUserDto(Guid UserId, string Email, string Login, string Phone);
-
-public static class ProjectsExtensions
-{
-    public static Envelope ToEnvelope(this object @object, HttpStatusCode code)
-    {
-        return new Envelope(code, @object, null);
-    }
-    
-    public static Envelope ToEnvelopeError(this HttpStatusCode code, string message)
-    {
-        return new Envelope(code, null, message);
-    }
-    
-    public static ProjectDto ToDto(this Project project)
-    {
-        return new ProjectDto()
-        {
-            Id = project.Id.Value,
-            Name = project.Name.Value,
-            Description = project.Description.Value,
-            CreatedAt = project.LifeTime.CreatedAt,
-            FinishedAt = project.LifeTime.FinishedAt,
-            IsClosed = project.LifeTime.IsFinished,
-            Tasks = project.Tasks.Select(t => t.ToDto(project))
-        };
+        Result<Project> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, p => p.ToDto());
     }
 
-    public static ProjectTaskDto ToDto(this ProjectTask task, Project project)
+    /// <summary>
+    /// Добавление задач в проект
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="projectId">Идентификатор проекта</param>
+    /// <param name="request">Запрос на добавление задач (Tasks)</param>
+    /// <param name="handler">Обработчик добавления задач</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Добавленные задачи</returns>
+    [HttpPost("{id:guid}/tasks")]
+    public async Task<Envelope> AddTasks(
+        [FromHeader(Name = "user-id")] Guid userId,
+        [FromRoute(Name = "id")] Guid projectId,
+        [FromBody] AddProjectTasksRequest request,
+        [FromServices] AddProjectTasksHandler handler,
+        CancellationToken ct
+    )
     {
-        return new ProjectTaskDto()
-        {
-            Id = task.Id.Value,
-            FinishedAt = task.StatusInfo.Schedule.Closed,
-            CreatedAt = task.StatusInfo.Schedule.Created,
-            MembersLimit = task.Limit.Value,
-            ProjectId = project.Id.Value,
-            StatusName = task.StatusInfo.Status.Name
-        };
+        AddProjectTasksCommand command = new(
+            CreatorId: userId,
+            ProjectId: projectId,
+            Tasks: request.Tasks.Select(t => new AddProjectTaskDto(
+                t.MembersLimit,
+                t.Title,
+                t.Description,
+                t.CloseDate
+            ))
+        );
+
+        Result<IEnumerable<ProjectTask>> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, tasks => tasks.Select(t => t.ToDto()));
     }
 
-    public static ProjectMemberDto ToDto(this ProjectMember member, Project project)
+    /// <summary>
+    /// Добавление участников в проект
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="projectId">Идентификатор проекта</param>
+    /// <param name="request">Запрос на добавление участников (Members)</param>
+    /// <param name="handler">Обработчик добавления участников</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Добавленные участники</returns>
+    [HttpPost("{id:guid}/members")]
+    public async Task<Envelope> AddMembers(
+        [FromHeader(Name = "user-id")] Guid userId,
+        [FromRoute(Name = "id")] Guid projectId,
+        [FromBody] AddProjectMembersRequest request,
+        [FromServices] AddProjectMembersHandler handler,
+        CancellationToken ct
+    )
     {
-        return new ProjectMemberDto()
-        {
-            Id = member.MemberId.Value,
-            Login = member.Login.Value,
-            ProjectId = project.Id.Value,
-            Status = member.Status.Name
-        };
+        AddProjectMembersCommand command = new(
+            CreatorId: userId,
+            ProjectId: projectId,
+            MemberIds: request.Members.Select(m => m.Id)
+        );
+
+        Result<IEnumerable<ProjectMember>> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, members => members.Select(m => m.ToDto()));
     }
 
-    public static ProjectTaskAssignmentDto ToDto(this ProjectTaskAssignment assignment)
+    /// <summary>
+    /// Создание назначения участника к задаче
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="projectId">Идентификатор проекта</param>
+    /// <param name="taskId">Идентификатор задачи</param>
+    /// <param name="request">Запрос на создание назначения (MemberId)</param>
+    /// <param name="handler">Обработчик создания назначения</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Созданное назначение</returns>
+    [HttpPost("{id:guid}/tasks/{taskid:guid}/assignments")]
+    public async Task<Envelope> MakeAssignment(
+        [FromHeader(Name = "user-id")] Guid userId,
+        [FromRoute(Name = "id")] Guid projectId,
+        [FromRoute(Name = "taskid")] Guid taskId,
+        [FromBody] AssignMemberToTaskRequest request,
+        [FromServices] AssignMemberToTaskHandler handler,
+        CancellationToken ct
+    )
     {
-        return new ProjectTaskAssignmentDto()
-        {
-            MemberInfo = assignment.Member.ToDto(assignment.Member.Project),
-            TaskInfo = assignment.Task.ToDto(assignment.Member.Project)
-        };
-    }
-}
+        AssignMemberToTaskCommand command = new(
+            AssignerId: userId,
+            ProjectId: projectId,
+            TaskId: taskId,
+            MemberId: request.MemberId
+        );
 
-public sealed class ProjectMemberDto
-{
-    public required Guid Id { get; set; }
-    public required Guid ProjectId { get; set; }
-    public required string Login { get; set; }
-    public required string Status { get; set; }
-}
-
-public sealed class ProjectDto
-{
-    public required Guid Id { get; set; }
-    public required DateTime CreatedAt { get; set; }
-    public required DateTime? FinishedAt { get; set; }
-    public required bool IsClosed { get; set; }
-    public required string Description { get; set; }
-    public required string Name { get; set; }
-    public required IEnumerable<ProjectTaskDto> Tasks { get; set; }
-}
-
-public sealed class ProjectTaskDto
-{
-    public required Guid Id { get; set; }
-    public required Guid ProjectId { get; set; }
-    public required int MembersLimit { get; set; }
-    public required string StatusName { get; set; }
-    public required DateTime CreatedAt { get; set; }
-    public required DateTime? FinishedAt { get; set; }
-}
-
-public sealed class ProjectTaskAssignmentDto
-{
-    public required ProjectMemberDto MemberInfo { get; set; }
-    public required ProjectTaskDto TaskInfo { get; set; }
-}
-
-
-public sealed record AddProjectTaskRequest(
-    short MembersLimit, 
-    string Status, 
-    DateTime? FinishedAt,
-    string Title,
-    string Description);
-
-public sealed class CreateProjectRequest
-{
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-}
-
-public sealed class Envelope : IResult
-{
-    public int Status { get; }
-    public object? Result { get; }
-    public string? Error { get; }
-
-    public Envelope(HttpStatusCode statusCode, object? result = null, string? error = null)
-    {
-        Status = (int)statusCode;
-        Result = result;
-        Error = error;
+        Result<ProjectTaskAssignment> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, assignment => assignment.ToDto());
     }
 
-    public Envelope(object result)
+    /// <summary>
+    /// Закрытие задачи
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="projectId">Идентификатор проекта</param>
+    /// <param name="taskId">Идентификатор задачи</param>
+    /// <param name="handler">Обработчик закрытия задачи</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Закрытая задача</returns>
+    [HttpPatch("{id:guid}/tasks/{taskid:guid}/close")]
+    public async Task<Envelope> CloseTask(
+        [FromHeader(Name = "user-id")] Guid userId,
+        [FromRoute(Name = "id")] Guid projectId,
+        [FromRoute(Name = "taskid")] Guid taskId,
+        [FromServices] CloseProjectTaskHandler handler,
+        CancellationToken ct
+    )
     {
-        Status = 200;
-        Error = null;
-        Result = result;
+        CloseProjectTaskCommand command = new(
+            CloserId: userId,
+            ProjectId: projectId,
+            TaskId: taskId
+        );
+
+        Result<ProjectTask> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, task => task.ToDto());
     }
 
-    public Envelope(HttpStatusCode statusCode, string error)
+    /// <summary>
+    /// Обновление информации о проекте
+    /// </summary>
+    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="projectId">Идентификатор проекта</param>
+    /// <param name="name">Новое название проекта</param>
+    /// <param name="description">Новое описание проекта</param>
+    /// <param name="handler">Обработчик обновления информации о проекте</param>
+    /// <param name="ct">Токен отмены</param>
+    /// <returns>Обновленный проект</returns>
+    [HttpPost("{id:guid}")]
+    public async Task<Envelope> UpdateInformation(
+        [FromHeader(Name = "user-id")] Guid userId,
+        [FromRoute(Name = "id")] Guid projectId,
+        [FromQuery(Name = "name")] string? name,
+        [FromQuery(Name = "description")] string? description,
+        [FromServices] UpdateProjectInfoHandler handler,
+        CancellationToken ct
+    )
     {
-        Status = (int)statusCode;
-        Error = error;
-    }
+        UpdateProjectInfoCommand command = new(
+            CreatorId: userId,
+            ProjectId: projectId,
+            NewName: name,
+            NewDescription: description
+        );
 
-    public Task ExecuteAsync(HttpContext httpContext)
-    {
-        httpContext.Response.StatusCode = Status;
-        httpContext.Response.ContentType = "application/json";
-        return httpContext.Response.WriteAsJsonAsync(this);
+        Result<Project> result = await handler.Handle(command, ct);
+        return Envelope.FromResult(result, project => project.ToDto());
     }
 }

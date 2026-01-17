@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using ProjectManagement.Domain.Utilities;
 
 namespace ProjectManagement.Domain.UserContext.ValueObjects;
 
@@ -28,6 +29,12 @@ public sealed partial record UserAccountData
         Login = login;
     }
 
+    public Result<UserAccountData> ChangeEmail(string email) => Create(email, Login);
+
+    public UserAccountData Copy() => new(Email, Login);
+
+    public Result<UserAccountData> ChangeLogin(string login) => Create(Email, login);
+
     /// <summary>
     /// Почта
     /// </summary>
@@ -38,27 +45,26 @@ public sealed partial record UserAccountData
     /// </summary>
     public string Login { get; }
 
-    public static UserAccountData Create(string email, string login)
-    {
-        Match match = _emailValidationRegex.Match(email);
-        if (match.Success == false)
-            throw new ArgumentException("Некорректный формат почты");
-
-        if (string.IsNullOrWhiteSpace(email))
-            throw new ArgumentException("Почта пользователя была пустой.");
-
-        if (string.IsNullOrWhiteSpace(login))
-            throw new ArgumentException("Логин пользователя был пустым.");
-
-        if (login.Length > MAX_LOGIN_LENGTH)
-            throw new ArgumentException(
+    public static Result<UserAccountData> Create(string email, string login) =>
+        (email, login) switch
+        {
+            { } when !_emailValidationRegex.IsMatch(email) => Error.InvalidFormat(
+                "Некорректный формат почты"
+            ),
+            { } when string.IsNullOrWhiteSpace(email) => Error.Validation(
+                "Почта пользователя была пустой."
+            ),
+            { } when string.IsNullOrWhiteSpace(login) => Error.Validation(
+                "Логин пользователя был пустым."
+            ),
+            { } when login.Length > MAX_LOGIN_LENGTH => Error.Validation(
                 $"Логин пользователя превышает длину {MAX_LOGIN_LENGTH} символов"
-            );
-
-        return login.Length < MIN_LOGIN_LENGTH
-            ? throw new ArgumentException($"Логин пользователя менее {MIN_LOGIN_LENGTH} символов")
-            : new UserAccountData(email, login);
-    }
+            ),
+            { } when login.Length < MIN_LOGIN_LENGTH => Error.Validation(
+                $"Логин пользователя менее {MIN_LOGIN_LENGTH} символов"
+            ),
+            { } => new UserAccountData(email, login),
+        };
 
     /// <summary>
     /// Регулярное выражение для проверки email
