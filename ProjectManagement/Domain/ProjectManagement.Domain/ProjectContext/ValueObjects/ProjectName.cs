@@ -28,9 +28,8 @@ public sealed record ProjectName
         Value = null!;
     } // ef core
 
-    public static Result<ProjectName> Create(string value)
-    {
-        return value switch
+    public static Result<ProjectName> Create(string value) =>
+        value switch
         {
             { } when string.IsNullOrWhiteSpace(value) => Error.Validation(
                 "Название проекта было пустым."
@@ -41,5 +40,4 @@ public sealed record ProjectName
             { } => new ProjectName(value),
             _ => throw new UnreachableException(),
         };
-    }
 }

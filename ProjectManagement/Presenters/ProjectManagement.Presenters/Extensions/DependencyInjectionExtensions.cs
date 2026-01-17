@@ -27,7 +27,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<ITransactionSource, TransactionSource>();
         services.AddScoped<ProjectsRepository>();
     }
-    
+
     public static void RegisterProjectsUseCases(this IServiceCollection services)
     {
         services.AddScoped<CreateProjectByUserHandler>();
@@ -38,7 +38,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<UpdateProjectInfoHandler>();
         services.AddScoped<AssignMemberToTaskHandler>();
     }
-    
+
     public static void RegisterUsersUseCases(this IServiceCollection services)
     {
         services.AddScoped<RegisterUserHandler>();

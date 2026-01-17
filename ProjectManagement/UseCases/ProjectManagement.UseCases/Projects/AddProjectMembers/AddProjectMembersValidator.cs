@@ -12,10 +12,6 @@ public sealed class AddProjectMembersValidator : AbstractValidator<AddProjectMem
     {
         RuleFor(x => x.CreatorId).MustBeValid(UserId.Create);
         RuleFor(x => x.ProjectId).MustBeValid(ProjectId.Create);
-        RuleFor(x => x.MemberIds).EachMustBeValid(
-            [
-                i => ProjectMemberId.Create(i)
-            ]
-        );
+        RuleFor(x => x.MemberIds).EachMustBeValid([i => ProjectMemberId.Create(i)]);
     }
 }

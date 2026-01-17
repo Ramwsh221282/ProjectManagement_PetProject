@@ -12,11 +12,10 @@ public sealed class AddProjectTasksValidator : AbstractValidator<AddProjectTasks
     {
         RuleFor(x => x.CreatorId).MustBeValid(UserId.Create);
         RuleFor(x => x.ProjectId).MustBeValid(ProjectId.Create);
-        RuleFor(x => x.Tasks).EachMustBeValid(
-            [
+        RuleFor(x => x.Tasks)
+            .EachMustBeValid([
                 t => ProjectTaskInfo.Create(t.Title, t.Description),
-                t => ProjectTaskMembersLimit.Create(t.MembersLimit)
-            ]
-        );
+                t => ProjectTaskMembersLimit.Create(t.MembersLimit),
+            ]);
     }
 }
